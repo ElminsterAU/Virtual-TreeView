@@ -3415,7 +3415,7 @@ type
     constructor Create; virtual;
     destructor Destroy; override;
     property Node  : PVirtualNode read FNode; // [IPK] Make FNode accessible
-    property Column: TColumnIndex read FColumn; // [IPK] Make Column(Index) accessible 
+    property Column: TColumnIndex read FColumn; // [IPK] Make Column(Index) accessible
 
     function BeginEdit: Boolean; virtual; stdcall;
     function CancelEdit: Boolean; virtual; stdcall;
@@ -33688,18 +33688,21 @@ end;
 procedure TVTEdit.WMDestroy(var Message: TWMDestroy);
 
 begin
-  // If editing stopped by other means than accept or cancel then we have to do default processing for
-  // pending changes.
-  if Assigned(FLink) and not FLink.FStopping then
-  begin
-    with FLink, FTree do
+  {>>>}
+  if not (csRecreating in ControlState) then
+  {<<<}
+    // If editing stopped by other means than accept or cancel then we have to do default processing for
+    // pending changes.
+    if Assigned(FLink) and not FLink.FStopping then
     begin
-      if (toAutoAcceptEditChange in TreeOptions.StringOptions) and Modified then
-        Text[FNode, FColumn{>>>}, True{<<<}] := FEdit.Text;
+      with FLink, FTree do
+      begin
+        if (toAutoAcceptEditChange in TreeOptions.StringOptions) and Modified then
+          Text[FNode, FColumn{>>>}, True{<<<}] := FEdit.Text;
+      end;
+      FLink := nil;
+      FRefLink := nil;
     end;
-    FLink := nil;
-    FRefLink := nil;
-  end;
 
   inherited;
 end;
@@ -33978,6 +33981,9 @@ begin
     FEdit.SelectAll;
     FEdit.SetFocus;
     FEdit.AutoAdjustSize;
+	{>>>}
+    FEdit.Repaint;
+	{<<<}
   end;
 end;
 
