@@ -585,7 +585,7 @@ begin
           if ImgText <> '' then
             pszName := pszName + ImgText  + '  ';
         end;
-        pszName := pszName + FVirtualTree.Text[FVirtualTree.FocusedNode, FVirtualTree.Header.MainColumn];
+        pszName := pszName + FVirtualTree.Text[FVirtualTree.FocusedNode, FVirtualTree.Header.MainColumn{>>>}, False{<<<}];
         result := S_OK;
       end
       else begin
@@ -695,7 +695,7 @@ begin
             if ImgText <> '' then
               ImgText := ImgText + '  ';
           end;
-          pszDescription := ImgText + FVirtualTree.Text[FVirtualTree.FocusedNode, FVirtualTree.Header.MainColumn] + '; ';
+          pszDescription := ImgText + FVirtualTree.Text[FVirtualTree.FocusedNode, FVirtualTree.Header.MainColumn{>>>}, False{<<<}] + '; ';
         end;
         for I := 0 to FVirtualTree.Header.Columns.Count - 1 do
           if (FVirtualTree.Header.MainColumn <> I) and (coVisible in FVirtualTree.Header.Columns[I].Options) then
@@ -706,7 +706,7 @@ begin
               if ImgText <> '' then
                 ImgText := ImgText + '  ';
             end;
-            ImgText := ImgText + FVirtualTree.Text[FVirtualTree.FocusedNode, I];
+            ImgText := ImgText + FVirtualTree.Text[FVirtualTree.FocusedNode, I{>>>}, False{<<<}];
             if ImgText <> '' then
               pszDescription := pszDescription
                +FVirtualTree.Header.Columns[I].Text

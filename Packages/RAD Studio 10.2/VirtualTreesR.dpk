@@ -12,18 +12,18 @@ package VirtualTreesR;
 {$LOCALSYMBOLS ON}
 {$LONGSTRINGS ON}
 {$OPENSTRINGS ON}
-{$OPTIMIZATION ON}
+{$OPTIMIZATION OFF}
 {$OVERFLOWCHECKS OFF}
 {$RANGECHECKS OFF}
-{$REFERENCEINFO OFF}
+{$REFERENCEINFO ON}
 {$SAFEDIVIDE OFF}
-{$STACKFRAMES OFF}
+{$STACKFRAMES ON}
 {$TYPEDADDRESS OFF}
 {$VARSTRINGCHECKS ON}
 {$WRITEABLECONST OFF}
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
-{$DEFINE RELEASE}
+{$DEFINE DEBUG}
 {$ENDIF IMPLICITBUILDING}
 {$LIBSUFFIX '25'}
 {$RUNONLY}
@@ -31,7 +31,13 @@ package VirtualTreesR;
 
 requires
   vcl,
-  vclx;
+  vclx,
+  vclimg,
+  dbrtl,
+  VclSmp,
+  Jcl,
+  JvCore,
+  JvStdCtrls;
 
 contains
   VirtualTrees in '..\..\Source\VirtualTrees.pas',
@@ -44,7 +50,8 @@ contains
   VirtualTrees.ClipBoard in '..\..\Source\VirtualTrees.ClipBoard.pas',
   VirtualTrees.Actions in '..\..\Source\VirtualTrees.Actions.pas',
   VirtualTrees.Export in '..\..\Source\VirtualTrees.Export.pas',
-  VirtualTrees.Utils in '..\..\Source\VirtualTrees.Utils.pas';
+  VirtualTrees.Utils in '..\..\Source\VirtualTrees.Utils.pas',
+  VirtualEditTree in '..\..\Source\VirtualEditTree.pas';
 
 end.
 
