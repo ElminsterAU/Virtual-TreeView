@@ -34,6 +34,7 @@ type
     procedure SetHookableWindowProc(const Value: TWndMethod); override;
 
     procedure SetBounds(R: TRect); override;
+    procedure AfterBeginEdit; override;
   end;
 
   TcxTextEditLink = class(TcxCustomTextEditLink)
@@ -188,6 +189,12 @@ begin
 end;
 
 { TcxCustomTextEditLink }
+
+procedure TcxCustomTextEditLink.AfterBeginEdit;
+begin
+  inherited;
+  ShowCaret(TcxCustomTextEditHacker(EditControl).InnerTextEdit.Control.Handle);
+end;
 
 function TcxCustomTextEditLink.GetHookableWindowProc: TWndMethod;
 begin

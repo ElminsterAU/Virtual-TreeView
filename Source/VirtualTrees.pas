@@ -18107,6 +18107,7 @@ end;
 procedure TBaseVirtualTree.WMPaint(var Message: TWMPaint);
 var
   DC: HDC;
+  ps: TPaintStruct;
 begin
   if tsVCLDragging in FStates then
     ImageList_DragShowNolock(False);
@@ -18130,6 +18131,9 @@ begin
       ReleaseDC(Handle, DC);
     end;
   end;//if header visible
+
+  BeginPaint(Handle, ps);
+  EndPaint(Handle, ps);
 end;
 
 //----------------------------------------------------------------------------------------------------------------------

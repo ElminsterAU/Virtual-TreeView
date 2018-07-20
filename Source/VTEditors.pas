@@ -410,8 +410,8 @@ begin
     HookableWindowProc := EditWndProc;
     FOldEditText := GetEditText;
     {>>>}
-	FEdit.Repaint;
-	{<<<}
+    FEdit.Repaint;
+    {<<<}
     AfterBeginEdit;
   end;
 end;
