@@ -202,12 +202,13 @@ begin
 end;
 
 procedure TcxCustomTextEditLink.SetBounds(R: TRect);
+var
+  lOffsets: TVTOffsets;
 begin
   if not FStopping then begin
     with R do begin
       // Set the edit's bounds but make sure there's a minimum width and the right border does not
       // extend beyond the parent's left/right border.
-      Dec(Left, FTree.TextMargin);
       if Left < 0 then
         Left := 0;
       Dec(Right);
@@ -217,8 +218,10 @@ begin
         Right := FTree.ClientWidth;
       FEdit.BoundsRect := R;
 
-      R.Left := FTree.TextMargin * 2;
-      R.Top := -1;
+      FTree.GetOffsets(FNode, lOffsets, TVTElement.ofsLabel, FColumn);
+
+      R.Left := FTree.TextMargin + lOffSets[TVTElement.ofsLabel];
+      R.Top := 0;
       R.Right := 0;
       R.Bottom := 0;
 
