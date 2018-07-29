@@ -23713,8 +23713,10 @@ var
   Constrained,
   SiblingConstrained: Boolean;
   lPreviousSelectedCount: Integer;
+  {>>>
   AddedNodesIndexes: array of Integer;
   AddedNodesSize: Integer;
+  <<<}
   PTmpNode: PVirtualNode;
 
 begin
@@ -23722,10 +23724,13 @@ begin
   // The idea behind this code is to use a kind of reverse merge sort. QuickSort is quite fast
   // and would do the job here too but has a serious problem with already sorted lists like FSelection.
 
+
+  {>>>
   // allocate array with indexes in NewItems (max number of entries)
   SetLength(AddedNodesIndexes, NewLength);
   // current number of entries in AddedNodesIndexes
   AddedNodesSize := 0;
+  <<<}
 
   // 1) Remove already selected items, mark all other as being selected.
   if ForceInsert then
@@ -23735,11 +23740,13 @@ begin
     Constrained := toLevelSelectConstraint in FOptions.FSelectionOptions;
     if Constrained and (FLastSelectionLevel = -1) then
       FLastSelectionLevel := GetNodeLevelForSelectConstraint(NewItems[0]);
+    {>>>
     for I := 0 to NewLength - 1 do
     begin
       AddedNodesIndexes[AddedNodesSize] := I;
       Inc(AddedNodesSize);
     end;
+    <<<}
   end
   else
   begin
@@ -23755,11 +23762,12 @@ begin
          (Constrained and (Cardinal(FLastSelectionLevel) <> GetNodeLevel(NewItems[I]))) or
          (SiblingConstrained and (FRangeAnchor.Parent <> NewItems[I].Parent)) then
         Inc(PAnsiChar(NewItems[I]))
+      {>>>
       else
       begin
         AddedNodesIndexes[AddedNodesSize] := I;
         Inc(AddedNodesSize);
-      end;
+      end<<<};
   end;
 
   I := PackArray(NewItems, NewLength);
@@ -23815,12 +23823,12 @@ begin
     end;
 
     // update selection count
-    Inc(FSelectionCount, AddedNodesSize);
+    Inc(FSelectionCount, {>>>AddedNodesSize}NewLength{<<<});
 
     // post process added nodes
-    for I := 0 to AddedNodesSize - 1 do
+    for I := 0 to {>>>AddedNodesSize}NewLength{<<<} - 1 do
     begin
-      PTmpNode := NewItems[AddedNodesIndexes[I]];
+      PTmpNode := NewItems[{>>>AddedNodesIndexes[{<<<}I{>>>]{<<<}];
       //sync path note: on click, multi-select ctrl-click and draw selection
       Include(PTmpNode.States, vsSelected);
       // call on add event callbackevent
