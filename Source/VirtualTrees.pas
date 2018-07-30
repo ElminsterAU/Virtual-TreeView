@@ -28584,13 +28584,13 @@ function TBaseVirtualTree.GetLastVisibleNoInit(Node: PVirtualNode = nil;
 // No initialization is performed.
 
 begin
-  Result := {>>>GetLastNoInit}GetLastVisibleChildNoInit{<<<}(Node, ConsiderChildrenAbove);
+  Result := GetLastNoInit(Node, ConsiderChildrenAbove);
   while Assigned(Result) and (Result <> Node) do
   begin
     if FullyVisible[Result] and
        (IncludeFiltered or not IsEffectivelyFiltered[Result]) then
       Break;
-    Result := {>>>GetPreviousNoInit}GetLastVisibleChildNoInit{<<<}(Result, ConsiderChildrenAbove);
+    Result := GetPreviousNoInit(Result, ConsiderChildrenAbove);
   end;
 
   if (Result = Node) then // i.e. there is no visible node
