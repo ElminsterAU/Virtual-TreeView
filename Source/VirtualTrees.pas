@@ -1900,6 +1900,9 @@ type
   TVTHeaderHeightTrackingEvent = procedure(Sender: TVTHeader; var P: TPoint; Shift: TShiftState; var Allowed: Boolean) of object;
   TVTHeaderHeightDblClickResizeEvent = procedure(Sender: TVTHeader; var P: TPoint; Shift: TShiftState; var Allowed: Boolean) of object;
   TVTHeaderNotifyEvent = procedure(Sender: TVTHeader; Column: TColumnIndex) of object;
+  {>>>}
+  TVTHeaderDroppedEvent = procedure(Sender: TVTHeader; SourceColumn, TargetColumn: TColumnIndex; var Handled: Boolean) of object;
+  {<<<}
   TVTHeaderDraggingEvent = procedure(Sender: TVTHeader; Column: TColumnIndex; var Allowed: Boolean) of object;
   TVTHeaderDraggedEvent = procedure(Sender: TVTHeader; Column: TColumnIndex; OldPosition: Integer) of object;
   TVTHeaderDraggedOutEvent = procedure(Sender: TVTHeader; Column: TColumnIndex; DropPosition: TPoint) of object;
@@ -2371,6 +2374,9 @@ type
     FOnDragAllowed: TVTDragAllowedEvent;         // used to get permission for manual drag in mouse down
     FOnDragOver: TVTDragOverEvent;               // called for every mouse move
     FOnDragDrop: TVTDragDropEvent;               // called on release of mouse button (if drop was allowed)
+    {>>>}
+    FOnHeaderDropped: TVTHeaderDroppedEvent;   // header (column) drag'n drop
+    {<<<}
     FOnHeaderDragged: TVTHeaderDraggedEvent;     // header (column) drag'n drop
     FOnHeaderDraggedOut: TVTHeaderDraggedOutEvent; // header (column) drag'n drop, which did not result in a valid drop.
     FOnHeaderDragging: TVTHeaderDraggingEvent;   // header (column) drag'n drop
@@ -2696,6 +2702,9 @@ type
     procedure DoHeaderAddPopupItem(const Column: TColumnIndex; var Cmd: TAddPopupItemType);
     procedure DoHeaderClick(const HitInfo: TVTHeaderHitInfo); virtual;
     procedure DoHeaderDblClick(const HitInfo: TVTHeaderHitInfo); virtual;
+    {>>>}
+    function DoHeaderDropped(SourceColumn, TargetColumn: TColumnIndex): Boolean; virtual;
+    {<<<}
     procedure DoHeaderDragged(Column: TColumnIndex; OldPosition: TColumnPosition); virtual;
     procedure DoHeaderDraggedOut(Column: TColumnIndex; DropPosition: TPoint); virtual;
     function DoHeaderDragging(Column: TColumnIndex): Boolean; virtual;
@@ -3013,6 +3022,9 @@ type
     property OnHeaderAddPopupItem: TVTHeaderAddPopupItemEvent read FOnHeaderAddPopupItem write FOnHeaderAddPopupItem;
     property OnHeaderClick: TVTHeaderClickEvent read FOnHeaderClick write FOnHeaderClick;
     property OnHeaderDblClick: TVTHeaderClickEvent read FOnHeaderDblClick write FOnHeaderDblClick;
+    {>>>}
+    property OnHeaderDropped: TVTHeaderDroppedEvent read FOnHeaderDropped write FOnHeaderDropped;
+    {<<<}
     property OnHeaderDragged: TVTHeaderDraggedEvent read FOnHeaderDragged write FOnHeaderDragged;
     property OnHeaderDraggedOut: TVTHeaderDraggedOutEvent read FOnHeaderDraggedOut write FOnHeaderDraggedOut;
     property OnHeaderDragging: TVTHeaderDraggingEvent read FOnHeaderDragging write FOnHeaderDragging;
@@ -3791,6 +3803,9 @@ type
     property OnHeaderAddPopupItem;
     property OnHeaderClick;
     property OnHeaderDblClick;
+    {>>>}
+    property OnHeaderDropped;
+    {<<<}
     property OnHeaderDragged;
     property OnHeaderDraggedOut;
     property OnHeaderDragging;
@@ -4056,6 +4071,9 @@ type
     property OnHeaderAddPopupItem;
     property OnHeaderClick;
     property OnHeaderDblClick;
+    {>>>}
+    property OnHeaderDropped;
+    {<<<}
     property OnHeaderDragged;
     property OnHeaderDraggedOut;
     property OnHeaderDragging;
@@ -11078,6 +11096,9 @@ begin
 
               if (FDropTarget > -1) and (FDropTarget <> FDragIndex) and PtInRect(R, P) then
               begin
+                {>>>}
+                if not Treeview.DoHeaderDropped(FDragIndex, FDropTarget) then begin
+                {<<<}
                 OldPosition := FColumns[FDragIndex].Position;
                 if FColumns.FDropBefore then
                 begin
@@ -11094,6 +11115,9 @@ begin
                     FColumns[FDragIndex].Position := FColumns[FDropTarget].Position + 1;
                 end;
                 Treeview.DoHeaderDragged(FDragIndex, OldPosition);
+                {>>>}
+                end;
+                {<<<}
               end
               else
                 Treeview.DoHeaderDraggedOut(FDragIndex, P);
@@ -20921,6 +20945,17 @@ begin
   if Assigned(FOnHeaderDrawQueryElements) then
     FOnHeaderDrawQueryElements(FHeader, PaintInfo, Elements);
 end;
+
+{>>>}
+//----------------------------------------------------------------------------------------------------------------------
+
+function TBaseVirtualTree.DoHeaderDropped(SourceColumn, TargetColumn: TColumnIndex): Boolean;
+begin
+  Result := False;
+  if Assigned(FOnHeaderDropped) then
+    FOnHeaderDropped(FHeader, SourceColumn, TargetColumn, Result);
+end;
+{<<<}
 
 //----------------------------------------------------------------------------------------------------------------------
 

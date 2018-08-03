@@ -285,6 +285,7 @@ type
     property OnHeaderAddPopupItem;
     property OnHeaderClick;
     property OnHeaderDblClick;
+    property OnHeaderDropped;
     property OnHeaderDragged;
     property OnHeaderDraggedOut;
     property OnHeaderDragging;
