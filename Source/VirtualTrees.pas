@@ -1,4 +1,4 @@
-
+ï»¿
 unit VirtualTrees;
 
 // The contents of this file are subject to the Mozilla Public License
@@ -26,15 +26,15 @@ unit VirtualTrees;
 // For a list of recent changes please see file CHANGES.TXT
 //
 // Credits for their valuable assistance and code donations go to:
-//   Freddy Ertl, Marian Aldenhövel, Thomas Bogenrieder, Jim Kuenemann, Werner Lehmann, Jens Treichler,
-//   Paul Gallagher (IBO tree), Ondrej Kelle, Ronaldo Melo Ferraz, Heri Bender, Roland Bedürftig (BCB)
+//   Freddy Ertl, Marian AldenhÃ¶vel, Thomas Bogenrieder, Jim Kuenemann, Werner Lehmann, Jens Treichler,
+//   Paul Gallagher (IBO tree), Ondrej Kelle, Ronaldo Melo Ferraz, Heri Bender, Roland BedÃ¼rftig (BCB)
 //   Anthony Mills, Alexander Egorushkin (BCB), Mathias Torell (BCB), Frank van den Bergh, Vadim Sedulin, Peter Evans,
 //   Milan Vandrovec (BCB), Steve Moss, Joe White, David Clark, Anders Thomsen, Igor Afanasyev, Eugene Programmer,
 //   Corbin Dunn, Richard Pringle, Uli Gerhardt, Azza, Igor Savkic, Daniel Bauten, Timo Tegtmeier, Dmitry Zegebart,
-//   Andreas Hausladen, Joachim Marder, Roman Kassebaum, Vincent Parret, Dietmar Rösler, Sanjay Kanade,
+//   Andreas Hausladen, Joachim Marder, Roman Kassebaum, Vincent Parret, Dietmar RÃ¶sler, Sanjay Kanade,
 //   and everyone that sent pull requests: https://github.com/Virtual-TreeView/Virtual-TreeView/pulls?q=
 // Beta testers:
-//   Freddy Ertl, Hans-Jürgen Schnorrenberg, Werner Lehmann, Jim Kueneman, Vadim Sedulin, Moritz Franckenstein,
+//   Freddy Ertl, Hans-JÃ¼rgen Schnorrenberg, Werner Lehmann, Jim Kueneman, Vadim Sedulin, Moritz Franckenstein,
 //   Wim van der Vegt, Franc v/d Westelaken
 // Indirect contribution (via publicly accessible work of those persons):
 //   Alex Denissov, Hiroyuki Hori (MMXAsm expert)
@@ -4187,7 +4187,7 @@ const
 
   // Do not modify the copyright in any way! Usage of this unit is prohibited without the copyright notice
   // in the compiled binary file.
-  Copyright: string = 'Virtual Treeview © 1999, 2010, 2016 Mike Lischke, Joachim Marder';
+  Copyright: string = 'Virtual Treeview Â© 1999, 2010, 2016 Mike Lischke, Joachim Marder';
 
 var
   StandardOLEFormat: TFormatEtc = (
@@ -14482,7 +14482,7 @@ begin
                   FillBitmap(FMinusBM);
                   FillBitmap(FHotMinusBM);
                   FillBitmap(FSelectedHotMinusBM);
-                  // Weil die selbstgezeichneten Bitmaps sehen im Vcl Style scheiße aus
+                  // Weil die selbstgezeichneten Bitmaps sehen im Vcl Style scheiÃŸe aus
                   // Because the self-drawn bitmaps view Vcl Style shit
                   if Theme = 0 then
                   begin
@@ -19012,8 +19012,10 @@ begin
         FMargin := MulDiv(FMargin, M, D);
         FImagesMargin := MulDiv(FImagesMargin, M, D);
         // Scale utility images, #796
+        {>>>
         if UtilityImages.Height <> MulDiv(UtilityImageSize, M, D) then
           ScaleImageList(UtilityImages, M, D);
+        <<<}
         // Scale also node heights
         BeginUpdate();
         try
@@ -34391,7 +34393,7 @@ begin
   begin
     // Set default font values first.
     Canvas.Font := Font;
-    if Enabled then // Es werden sonst nur die Farben verwendet von Font die an  Canvas.Font übergeben wurden
+    if Enabled then // Es werden sonst nur die Farben verwendet von Font die an  Canvas.Font Ã¼bergeben wurden
        Canvas.Font.Color := FColors.NodeFontColor
     else
       Canvas.Font.Color := FColors.DisabledColor;
@@ -35342,7 +35344,7 @@ function TCustomVirtualStringTree.ContentToHTML(Source: TVSTTextSourceType; cons
 
 // Renders the current tree content (depending on Source) as HTML text encoded in UTF-8.
 // If Caption is not empty then it is used to create and fill the header for the table built here.
-// Based on ideas and code from Frank van den Bergh and Andreas Hörstemeier.
+// Based on ideas and code from Frank van den Bergh and Andreas HÃ¶rstemeier.
 
 begin
   Result := VirtualTrees.Export.ContentToHTML(Self, Source, Caption);
@@ -35417,7 +35419,7 @@ end;
 function TCustomVirtualStringTree.ContentToRTF(Source: TVSTTextSourceType): RawByteString;
 
 // Renders the current tree content (depending on Source) as RTF (rich text).
-// Based on ideas and code from Frank van den Bergh and Andreas Hörstemeier.
+// Based on ideas and code from Frank van den Bergh and Andreas HÃ¶rstemeier.
 
 begin
   Result := VirtualTrees.Export.ContentToRTF(Self, Source);
