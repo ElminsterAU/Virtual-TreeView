@@ -32425,6 +32425,21 @@ function TBaseVirtualTree.ScrollIntoView(Node: PVirtualNode; Center: Boolean; Ho
 // be horizontally scrolled if needed.
 // Note: All collapsed parents of the node are expanded.
 
+  {>>> Expand parents starting from the root, make sure everything is sorted }
+  procedure ExpandParent(aNode : PVirtualNode);
+  begin
+    if Assigned(aNode) then begin
+      ExpandParent(aNode.Parent);
+      if not (vsExpanded in aNode.States) then
+        ToggleNode(aNode)
+      else
+        if (FUpdateCount = 0) and (toAutoSort in FOptions.FAutoOptions) and (FHeader.FSortColumn > InvalidColumn) then
+          if FullyVisible[aNode] then
+            Sort(aNode, FHeader.FSortColumn, FHeader.FSortDirection, True);
+    end;
+  end;
+  {<<<}
+
 var
   R: TRect;
   Run: PVirtualNode;
@@ -32440,13 +32455,16 @@ begin
   if Assigned(Node) and (Node <> FRoot) then
   begin
     // Make sure all parents of the node are expanded.
+    {>>>
     Run := Node.Parent;
     while Run <> FRoot do
     begin
       if not (vsExpanded in Run.States) then
         ToggleNode(Run);
       Run := Run.Parent;
-    end;
+    end;}
+    ExpandParent(Node.Parent);
+    {<<<}
     UseColumns := FHeader.UseColumns;
     if UseColumns and FHeader.FColumns.IsValidColumn(FFocusedColumn) then
       R := GetDisplayRect(Node, FFocusedColumn, not (toGridExtensions in FOptions.FMiscOptions))
