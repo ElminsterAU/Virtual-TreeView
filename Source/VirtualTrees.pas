@@ -32428,7 +32428,7 @@ function TBaseVirtualTree.ScrollIntoView(Node: PVirtualNode; Center: Boolean; Ho
   {>>> Expand parents starting from the root, make sure everything is sorted }
   procedure ExpandParent(aNode : PVirtualNode);
   begin
-    if Assigned(aNode) then begin
+    if Assigned(aNode) and (aNode <> FRoot) then begin
       ExpandParent(aNode.Parent);
       if not (vsExpanded in aNode.States) then
         ToggleNode(aNode)
