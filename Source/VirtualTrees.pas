@@ -3152,6 +3152,9 @@ type
       IncludeFiltered: Boolean = False): PVirtualNode;
     function GetMaxColumnWidth(Column: TColumnIndex; UseSmartColumnWidth: Boolean = False): Integer; virtual;
     function GetNext(Node: PVirtualNode; ConsiderChildrenAbove: Boolean = False): PVirtualNode;
+    {>>>}
+    function GetNextNoChild(Node: PVirtualNode): PVirtualNode;
+    {<<<}
     function GetNextChecked(Node: PVirtualNode; State: TCheckState = csCheckedNormal;
       ConsiderChildrenAbove: Boolean = False): PVirtualNode; overload;
     function GetNextChecked(Node: PVirtualNode; ConsiderChildrenAbove: Boolean): PVirtualNode; overload;
@@ -28720,6 +28723,7 @@ begin
       if Assigned(Result.FirstChild) then
         Result := Result.FirstChild
       else
+      {>>>
       begin
         repeat
           // Is there a next sibling?
@@ -28741,7 +28745,9 @@ begin
             end;
           end;
         until False;
-      end;
+      end;}
+        Exit(GetNextNoChild(Result));
+      {<<<}
     end;
   end;
 
@@ -28750,6 +28756,45 @@ begin
 end;
 
 //----------------------------------------------------------------------------------------------------------------------
+
+{>>>}
+function TBaseVirtualTree.GetNextNoChild(Node: PVirtualNode): PVirtualNode;
+
+// Returns next node in tree, ignoring children. The Result will be initialized if needed.
+
+begin
+  Result := Node;
+  if Assigned(Result) then
+  begin
+    Assert(Result <> FRoot, 'Node must not be the hidden root node.');
+    repeat
+      // Is there a next sibling?
+      if Assigned(Result.NextSibling) then
+      begin
+        Result := Result.NextSibling;
+        Break;
+      end
+      else
+      begin
+        // No sibling anymore, so use the parent's next sibling.
+        if Result.Parent <> FRoot then
+          Result := Result.Parent
+        else
+        begin
+          // There are no further nodes to examine, hence there is no further visible node.
+          Result := nil;
+          Break;
+        end;
+      end;
+    until False;
+  end;
+
+  if Assigned(Result) and not (vsInitialized in Result.States) then
+    InitNode(Result);
+end;
+
+//----------------------------------------------------------------------------------------------------------------------
+{<<<}
 
 function TBaseVirtualTree.GetNextChecked(Node: PVirtualNode; State: TCheckState = csCheckedNormal;
   ConsiderChildrenAbove: Boolean = False): PVirtualNode;
