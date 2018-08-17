@@ -32431,7 +32431,7 @@ function TBaseVirtualTree.ScrollIntoView(Node: PVirtualNode; Center: Boolean; Ho
       else
         if (FUpdateCount = 0) and (toAutoSort in FOptions.FAutoOptions) and (FHeader.FSortColumn > InvalidColumn) then
           if FullyVisible[aNode] then
-            Sort(aNode, FHeader.FSortColumn, FHeader.FSortDirection, True);
+            DoSort(aNode, FHeader.FSortColumn, FHeader.FSortDirection, True);
     end;
   end;
   {<<<}
@@ -33271,7 +33271,7 @@ begin
                 end;
               end;
               if toAutoSort in FOptions.FAutoOptions then
-                Sort(Node, FHeader.FSortColumn, FHeader.FSortDirection, False);
+                {>>>Sort}DoSort{<<<}(Node, FHeader.FSortColumn, FHeader.FSortDirection, False);
             end;// if UpdateCount = 0
 
             Include(Node.States, vsExpanded);
