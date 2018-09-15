@@ -859,7 +859,6 @@ type
   TVirtualTreeHintWindow = class(THintWindow)
   strict private
     FHintData: TVTHintData;
-    FDrawBuffer: TBitmap;
     FTextHeight: Integer;
     procedure CMTextChanged(var Message: TMessage); message CM_TEXTCHANGED;
     function GetHintWindowDestroyed: Boolean;
@@ -870,10 +869,8 @@ type
     procedure CreateParams(var Params: TCreateParams); override;
     procedure Paint; override;
 
-    property DrawBuffer: TBitmap read FDrawBuffer;
     property HintData: TVTHintData read FHintData;
     property HintWindowDestroyed: Boolean read GetHintWindowDestroyed;
-    property TextHeight: Integer read FTextHeight;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -5576,10 +5573,6 @@ constructor TVirtualTreeHintWindow.Create(AOwner: TComponent);
 
 begin
   inherited;
-
-  FDrawBuffer := TBitmap.Create;
-  FDrawBuffer.PixelFormat := pf32Bit;
-  //DoubleBuffered := False; // we do our own buffering
   FHintWindowDestroyed := False;
 end;
 
@@ -5589,7 +5582,6 @@ destructor TVirtualTreeHintWindow.Destroy;
 
 begin
   FHintWindowDestroyed := True;
-  FDrawBuffer.Free;
   inherited;
 end;
 
@@ -5673,7 +5665,6 @@ var
   Y: Integer;
   S: string;
   DrawFormat: Cardinal;
-  Shadow: Integer;
   HintKind: TVTHintKind;
   LClipRect: TRect;
 
@@ -5683,10 +5674,7 @@ var
   LGradientEnd: TColor;
 
 begin
-  Shadow := 0;    // TODO: This value is never changed
-  FDrawBuffer.SetSize(Width, Height);
-
-  with FHintData, FDrawBuffer do
+  with FHintData do
   begin
     // Do actual painting only in the very first run.
     // If the given node is nil then we have to display a header hint.
@@ -5701,10 +5689,10 @@ begin
       if LineBreakStyle = hlbForceMultiLine then
         Y := 1
       else
-        Y := (R.Top - R.Bottom - Shadow + Self.Height) div 2;
+        Y := (R.Top - R.Bottom  + Self.Height) div 2;
     end;
 
-    R := Rect(0, 0, Width - Shadow, Height - Shadow);
+    R := Rect(0, 0, Width, Height);
 
     HintKind := vhkText;
     if Assigned(Node) then
@@ -5771,8 +5759,6 @@ begin
         Winapi.Windows.DrawTextW(Handle, PWideChar(HintText), Length(HintText), R, DrawFormat);
       end;
   end;
-  //TODO: Can we paint on the canvas directly?
-  BitBlt(Canvas.Handle, 0, 0, Width, Height, FDrawBuffer.Canvas.Handle, 0, 0, SRCCOPY);
 end;
 
 //----------------------------------------------------------------------------------------------------------------------
