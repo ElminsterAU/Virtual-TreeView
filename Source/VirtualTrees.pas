@@ -849,56 +849,29 @@ type
     Node: PVirtualNode;
     Column: TColumnIndex;
     HintRect: TRect;            // used for draw trees only, string trees get the size from the hint string
-    DefaultHint: string; // used only if there is no node specific hint string available
-                                // or a header hint is about to appear
     HintText: string;    // set when size of the hint window is calculated
     BidiMode: TBidiMode;
     Alignment: TAlignment;
     LineBreakStyle: TVTToolTipLineBreakStyle;
   end;
 
-  // Determines the kind of animation when a hint is activated.
-  // Note: If toHotTrack is present, animation defaults to hatNone to avoid
-  // delays in hot tracking
-  THintAnimationType = (
-    hatNone,                 // no animation at all, just display hint/tooltip
-    hatFade,                 // fade in the hint/tooltip, like in Windows 2000
-    hatSlide,                // slide in the hint/tooltip, like in Windows 98
-    hatSystemDefault         // use what the system is using (slide for Win9x, slide/fade for Win2K+, depends on settings)
-  );
-
   // The trees need an own hint window class because of Unicode output and adjusted font.
   TVirtualTreeHintWindow = class(THintWindow)
-  private
+  strict private
     FHintData: TVTHintData;
-    FBackground,
-    FDrawBuffer,
-    FTarget: TBitmap;
     FTextHeight: Integer;
-    FAnimationType: THintAnimationType;          // none, fade in, slide in animation (just like those animations used
-    function DoGetAnimationType: THintAnimationType; virtual;
-    function AnimationCallback(Step, StepSize: Integer; Data: Pointer): Boolean;
     procedure CMTextChanged(var Message: TMessage); message CM_TEXTCHANGED;
-    function GetHintWindowDestroyed: Boolean;
     procedure WMEraseBkgnd(var Message: TWMEraseBkgnd); message WM_ERASEBKGND;
-    procedure WMNCPaint(var Message: TMessage); message WM_NCPAINT;
     procedure WMShowWindow(var Message: TWMShowWindow); message WM_SHOWWINDOW;
-    procedure InternalPaint(Step, StepSize: Integer);
   strict protected
     procedure CreateParams(var Params: TCreateParams); override;
     procedure Paint; override;
 
-    property Background: TBitmap read FBackground;
-    property DrawBuffer: TBitmap read FDrawBuffer;
     property HintData: TVTHintData read FHintData;
-    property HintWindowDestroyed: Boolean read GetHintWindowDestroyed;
-    property Target: TBitmap read FTarget;
-    property TextHeight: Integer read FTextHeight;
+    function HintWindowDestroyed(): Boolean;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-
-    procedure ActivateHint(Rect: TRect; const AHint: string); override;
     function CalcHintRect(MaxWidth: Integer; const AHint: string; AData: Pointer): TRect; override;
     function IsHintMsg(var Msg: TMsg): Boolean; override;
   end;
@@ -1503,7 +1476,6 @@ type
   // Various events must be handled at different places than they were initiated or need
   // a persistent storage until they are reset.
   TVirtualTreeStates = set of (
-    tsCancelHintAnimation,    // Set when a new hint is about to show but an old hint is still being animated.
     tsChangePending,          // A selection change is pending.
     tsCheckPropagation,       // Set during automatic check state propagation.
     tsCollapsing,             // A full collapse operation is in progress.
@@ -4419,7 +4391,7 @@ end;
 
 //----------------------------------------------------------------------------------------------------------------------
 
-procedure CreateSystemImageSet(var IL: TImageList; Flags: Cardinal; Flat: Boolean);
+procedure CreateSystemImageSet(Handle: HWND; var IL: TImageList; Flags: Cardinal; Flat: Boolean);
 
 // Creates a system check image set.
 // Note: the DarkCheckImages and FlatImages image lists must already be filled, as some images from them are copied here.
@@ -4429,6 +4401,8 @@ const
 
 var
   BM: TBitmap;
+  Theme: HTHEME;
+  Details: TThemedElementDetails;
 
   //--------------- local functions -------------------------------------------
 
@@ -4482,7 +4456,10 @@ var
       ButtonState := ButtonState or DFCS_CHECKED;
     if Flat then
     ButtonState := ButtonState or DFCS_FLAT;
-    DrawFrameControl(BM.Canvas.Handle, Rect(0, 0, BM.Width, BM.Height), DFC_BUTTON, ButtonType or ButtonState);
+    if StyleServices.Enabled and StyleServices.IsSystemStyle then
+      DrawThemeBackground(Theme, BM.Canvas.Handle, Details.Part, Details.State, Rect(0, 0, BM.Width, BM.Height), nil)
+    else
+      DrawFrameControl(BM.Canvas.Handle, Rect(0, 0, BM.Width, BM.Height), DFC_BUTTON, ButtonType or ButtonState);
     IL.AddMasked(BM, MaskColor);
   end;
 
@@ -4491,12 +4468,23 @@ var
 var
   I: Integer;
   lSize: TSize;
+  Res: Boolean;
 begin
   BM := TBitmap.Create; // Create a temporary bitmap, which holds the intermediate images.
   try
+    Res := False;
     // Retrieve the checkbox image size, prefer theme if available, fall back to GetSystemMetrics() otherwise, but this returns odd results on Windows 8 and higher in high-dpi scenarios.
-    if not StyleServices.Enabled or not StyleServices.GetElementSize(BM.Canvas.Handle, StyleServices.GetElementDetails(tbCheckBoxUncheckedNormal), TElementSize.esActual, lSize) then
-     lSize := TSize.Create(GetSystemMetrics(SM_CXMENUCHECK), GetSystemMetrics(SM_CYMENUCHECK));
+    if StyleServices.Enabled then
+      if StyleServices.IsSystemStyle then
+      begin
+        Theme := OpenThemeData(Handle, 'BUTTON');
+        Details := StyleServices.GetElementDetails(tbCheckBoxUncheckedNormal);
+        Res := GetThemePartSize(Theme, BM.Canvas.Handle, Details.Part, Details.State, nil, TS_TRUE, lSize) = S_OK;
+      end
+      else
+        Res := StyleServices.GetElementSize(BM.Canvas.Handle, StyleServices.GetElementDetails(tbCheckBoxUncheckedNormal), TElementSize.esActual, lSize);
+    if not Res then
+      lSize := TSize.Create(GetSystemMetrics(SM_CXMENUCHECK), GetSystemMetrics(SM_CYMENUCHECK));
 
     IL := TImageList.CreateSize(lSize.cx, lSize.cy);
     with IL do
@@ -4516,6 +4504,8 @@ begin
       AddSystemImage(IL, I);
     // Add the 4 node images
     AddNodeImages(IL);
+    if StyleServices.Enabled and StyleServices.IsSystemStyle then
+      CloseThemeData(Theme);
 
   finally
     BM.Free;
@@ -4564,7 +4554,7 @@ begin
     Handle := ImageList_Create(UtilityImageSize, UtilityImageSize, Flags, 0, AllocBy);
   ConvertImageList(UtilityImages, 'VT_UTILITIES');
 
-  CreateSystemImageSet(SystemCheckImages, Flags, False);
+  CreateSystemImageSet(0, SystemCheckImages, Flags, False);
 
   // Delphi (at least version 6 and lower) does not provide a standard split cursor.
   // Hence we have to load our own.
@@ -5594,51 +5584,12 @@ var
 
 //----------------------------------------------------------------------------------------------------------------------
 
-function TVirtualTreeHintWindow.DoGetAnimationType: THintAnimationType;
-
-// Determines (depending on the properties settings and the system) which hint
-// animation type is to be used.
-
-var
-  Animation: BOOL;
-
-begin
-  Result := FAnimationType;
-  if Result = hatSystemDefault then
-  begin
-    SystemParametersInfo(SPI_GETTOOLTIPANIMATION, 0, @Animation, 0);
-    if not Animation then
-      Result := hatNone
-    else
-    begin
-      SystemParametersInfo(SPI_GETTOOLTIPFADE, 0, @Animation, 0);
-      if Animation then
-        Result := hatFade
-      else
-        Result := hatSlide;
-    end;
-  end;
-
-  //Disable animation if hot tracking is ON as it causes problems
-  if (toHotTrack in FHintData.Tree.TreeOptions.PaintOptions) then
-    Result := hatNone;
-end;
 
 constructor TVirtualTreeHintWindow.Create(AOwner: TComponent);
 
 begin
   inherited;
-
-  FBackground := TBitmap.Create;
-  FBackground.PixelFormat := pf32Bit;
-  FDrawBuffer := TBitmap.Create;
-  FDrawBuffer.PixelFormat := pf32Bit;
-  FTarget := TBitmap.Create;
-  FTarget.PixelFormat := pf32Bit;
-
-  DoubleBuffered := False; // we do our own buffering
   FHintWindowDestroyed := False;
-  FAnimationType := hatSystemDefault
 end;
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -5647,29 +5598,7 @@ destructor TVirtualTreeHintWindow.Destroy;
 
 begin
   FHintWindowDestroyed := True;
-
-  FTarget.Free;
-  FDrawBuffer.Free;
-  FBackground.Free;
   inherited;
-end;
-
-//----------------------------------------------------------------------------------------------------------------------
-
-function TVirtualTreeHintWindow.AnimationCallback(Step, StepSize: Integer; Data: Pointer): Boolean;
-
-begin
-  Result := not FHintWindowDestroyed and HandleAllocated and IsWindowVisible(Handle) and
-    Assigned(FHintData.Tree) and not (tsCancelHintAnimation in FHintData.Tree.FStates);
-  if Result then
-  begin
-    InternalPaint(Step, StepSize);
-    // We have to allow certain messages to be processed normally for various reasons.
-    // This introduces another problem however if this hint window is destroyed
-    // while it is still in the animation loop. A global variable keeps track of
-    // that case. This is reliable because we can only have one (internal) hint window.
-    Application.ProcessMessages;
-  end;
 end;
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -5682,7 +5611,7 @@ end;
 
 //----------------------------------------------------------------------------------------------------------------------
 
-function TVirtualTreeHintWindow.GetHintWindowDestroyed;
+function TVirtualTreeHintWindow.HintWindowDestroyed;
 
 // This function exists to inform descendants if the hint window has been destroyed.
 
@@ -5700,15 +5629,6 @@ begin
   Message.Result := 1;
 end;
 
-//----------------------------------------------------------------------------------------------------------------------
-
-procedure TVirtualTreeHintWindow.WMNCPaint(var Message: TMessage);
-
-// The control is fully painted by own code so don't paint any borders.
-
-begin
-  Message.Result := 0;
-end;
 
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -5719,10 +5639,6 @@ procedure TVirtualTreeHintWindow.WMShowWindow(var Message: TWMShowWindow);
 begin
   if not Message.Show then
   begin
-    // Don't touch the last hint rectangle stored in the associated tree to avoid flickering in certain situations.
-    Finalize(FHintData);
-    ZeroMemory (@FHintData, SizeOf(FHintData));
-
     // If the hint window destruction flag to stop any hint window animation was set by a tree
     // during its destruction then reset it here to allow other tree instances to still use
     // this hint window.
@@ -5746,70 +5662,12 @@ end;
 
 //----------------------------------------------------------------------------------------------------------------------
 
-procedure TVirtualTreeHintWindow.InternalPaint(Step, StepSize: Integer);
-
-  //--------------- local functions -------------------------------------------
-
-  procedure DoShadowBlend(DC: HDC; R: TRect; Alpha: Integer);
-
-  // Helper routine for shadow blending to shorten the parameter list in frequent calls.
-
-  begin
-    AlphaBlend(0, DC, R, Point(0, 0), bmConstantAlphaAndColor,  Alpha, clBlack);
-  end;
-
-  //---------------------------------------------------------------------------
-
-  procedure DrawHintShadow(Canvas: TCanvas; ShadowSize: Integer);
-
-  var
-    R: TRect;
-
-  begin
-    // Bottom shadow.
-    R := Rect(ShadowSize, Height - ShadowSize, Width, Height);
-    DoShadowBlend(Canvas.Handle, R, 5);
-    Inc(R.Left);
-    Dec(R.Right);
-    Dec(R.Bottom);
-    DoShadowBlend(Canvas.Handle, R, 10);
-    Inc(R.Left);
-    Dec(R.Right);
-    Dec(R.Bottom);
-    DoShadowBlend(Canvas.Handle, R, 20);
-    Inc(R.Left);
-    Dec(R.Right);
-    Dec(R.Bottom);
-    DoShadowBlend(Canvas.Handle, R, 35);
-    Inc(R.Left);
-    Dec(R.Right);
-    Dec(R.Bottom);
-    DoShadowBlend(Canvas.Handle, R, 50);
-    // Right shadow.
-    R := Rect(Width - ShadowSize, ShadowSize, Width, Height - ShadowSize);
-    DoShadowBlend(Canvas.Handle, R, 5);
-    Inc(R.Top);
-    Dec(R.Right);
-    DoShadowBlend(Canvas.Handle, R, 10);
-    Inc(R.Top);
-    Dec(R.Right);
-    DoShadowBlend(Canvas.Handle, R, 20);
-    Inc(R.Top);
-    Dec(R.Right);
-    DoShadowBlend(Canvas.Handle, R, 35);
-    Inc(R.Top);
-    Dec(R.Right);
-    DoShadowBlend(Canvas.Handle, R, 50);
-  end;
-
-  //--------------- end local functions ---------------------------------------
-
+procedure TVirtualTreeHintWindow.Paint();
 var
   R: TRect;
   Y: Integer;
   S: string;
   DrawFormat: Cardinal;
-  Shadow: Integer;
   HintKind: TVTHintKind;
   LClipRect: TRect;
 
@@ -5819,225 +5677,90 @@ var
   LGradientEnd: TColor;
 
 begin
-  Shadow := 0;    // TODO: This value is never changed
-
-  with FHintData, FDrawBuffer do
+  with FHintData do
   begin
     // Do actual painting only in the very first run.
-    if Step = 0 then
+    // If the given node is nil then we have to display a header hint.
+    if (Node = nil) or (Tree.FHintMode <> hmToolTip) then
     begin
-      // If the given node is nil then we have to display a header hint.
-      if (Node = nil) or (Tree.FHintMode <> hmToolTip) then
-      begin
-        Canvas.Font := Screen.HintFont;
-        Y := 2;
-      end
+      Canvas.Font := Screen.HintFont;
+      Y := 2;
+    end
+    else
+    begin
+      Tree.GetTextInfo(Node, Column, Canvas.Font, R,{>>>} False{<<<}, S);
+      if LineBreakStyle = hlbForceMultiLine then
+        Y := 1
       else
-      begin
-        Tree.GetTextInfo(Node, Column, Canvas.Font, R{>>>}, False{<<<}, S);
-        if LineBreakStyle = hlbForceMultiLine then
-          Y := 1
-        else
-          Y := (R.Top - R.Bottom - Shadow + Self.Height) div 2;
-      end;
-
-      R := Rect(0, 0, Width - Shadow, Height - Shadow);
-
-      HintKind := vhkText;
-      if Assigned(Node) then
-        Tree.DoGetHintKind(Node, Column, HintKind);
-
-      if HintKind = vhkOwnerDraw then
-      begin
-        Tree.DoDrawHint(Canvas, Node, R, Column);
-      end
-      else
-        with Canvas do
-        begin
-          if Tree.VclStyleEnabled  then
-          begin
-            LDetails := StyleServices.GetElementDetails(thHintNormal);
-            if StyleServices.GetElementColor(LDetails, ecGradientColor1, LColor) and (LColor <> clNone) then
-              LGradientStart := LColor
-            else
-              LGradientStart := clInfoBk;
-            if StyleServices.GetElementColor(LDetails, ecGradientColor2, LColor) and (LColor <> clNone) then
-              LGradientEnd := LColor
-            else
-              LGradientEnd := clInfoBk;
-            if StyleServices.GetElementColor(LDetails, ecTextColor, LColor) and (LColor <> clNone) then
-              Font.Color := LColor
-            else
-              Font.Color := Screen.HintFont.Color;
-            GradientFillCanvas(Canvas, LGradientStart, LGradientEnd, R, gdVertical);
-          end
-          else
-          begin
-            // Still force tooltip back and text color.
-            Font.Color := clInfoText;
-            Pen.Color := clBlack;
-            Brush.Color := clInfoBk;
-            if IsWinVistaOrAbove and StyleServices.Enabled and ((toThemeAware in Tree.TreeOptions.PaintOptions) or
-               (toUseExplorerTheme in Tree.TreeOptions.PaintOptions)) then
-            begin
-              if toUseExplorerTheme in Tree.TreeOptions.PaintOptions then // ToolTip style
-                StyleServices.DrawElement(Canvas.Handle, StyleServices.GetElementDetails(tttStandardNormal), R)
-              else
-                begin // Hint style
-                  LClipRect := R;
-                  InflateRect(R, 4, 4);
-                  StyleServices.DrawElement(Handle, StyleServices.GetElementDetails(tttStandardNormal), R, @LClipRect);
-                  R := LClipRect;
-                  StyleServices.DrawEdge(Handle, StyleServices.GetElementDetails(twWindowRoot), R, [eeRaisedOuter], [efRect]);
-                end;
-            end
-            else
-              if Tree.VclStyleEnabled then
-                StyleServices.DrawElement(Canvas.Handle, StyleServices.GetElementDetails(tttStandardNormal), R)
-              else
-                Rectangle(R);
-          end;
-          // Determine text position and don't forget the border.
-          InflateRect(R, -1, -1);
-          DrawFormat := DT_TOP or DT_NOPREFIX;
-          SetBkMode(Handle, Winapi.Windows.TRANSPARENT);
-          R.Top := Y;
-          R.Left := R.Left + 3; // Make the text more centered
-          if Assigned(Node) and (LineBreakStyle = hlbForceMultiLine) then
-            DrawFormat := DrawFormat or DT_WORDBREAK;
-          Winapi.Windows.DrawTextW(Handle, PWideChar(HintText), Length(HintText), R, DrawFormat);
-        end;
+        Y := (R.Top - R.Bottom  + Self.Height) div 2;
     end;
-  end;
 
+    R := Rect(0, 0, Width, Height);
 
-    if StepSize > 0 then
+    HintKind := vhkText;
+    if Assigned(Node) then
+      Tree.DoGetHintKind(Node, Column, HintKind);
+
+    if HintKind = vhkOwnerDraw then
+    begin
+      Tree.DoDrawHint(Canvas, Node, R, Column);
+    end
+    else
+      with Canvas do
       begin
-        if DoGetAnimationType = hatFade then
+        if Tree.VclStyleEnabled  then
         begin
-          with FTarget do
-            BitBlt(Canvas.Handle, 0, 0, Width, Height, FBackground.Canvas.Handle, 0, 0, SRCCOPY);
-          // Main image.
-          AlphaBlend(FDrawBuffer.Canvas.Handle, FTarget.Canvas.Handle, Rect(0, 0, Width - Shadow, Height - Shadow),
-            Point(0, 0), bmConstantAlpha,  MulDiv(Step, 256, FadeAnimationStepCount), 0);
-
-          if Shadow > 0 then
-            DrawHintShadow(FTarget.Canvas, Shadow);
-          BitBlt(Canvas.Handle, 0, 0, Width, Height, FTarget.Canvas.Handle, 0, 0, SRCCOPY);
+          LDetails := StyleServices.GetElementDetails(thHintNormal);
+          if StyleServices.GetElementColor(LDetails, ecGradientColor1, LColor) and (LColor <> clNone) then
+            LGradientStart := LColor
+          else
+            LGradientStart := clInfoBk;
+          if StyleServices.GetElementColor(LDetails, ecGradientColor2, LColor) and (LColor <> clNone) then
+            LGradientEnd := LColor
+          else
+            LGradientEnd := clInfoBk;
+          if StyleServices.GetElementColor(LDetails, ecTextColor, LColor) and (LColor <> clNone) then
+            Font.Color := LColor
+          else
+            Font.Color := Screen.HintFont.Color;
+          GradientFillCanvas(Canvas, LGradientStart, LGradientEnd, R, gdVertical);
         end
         else
         begin
-        // Slide is done by blitting "step" lines of the lower part of the hint window
-        // and fill the rest with the screen background.
-
-        // 1) blit hint bitmap to the hint canvas
-        BitBlt(Canvas.Handle, 0, 0, Width - Shadow, Step, FDrawBuffer.Canvas.Handle, 0, Height - Step, SRCCOPY);
-        // 2) blit background rest to hint canvas
-        if Step <= Shadow then
-          Step := 0
-        else
-          Dec(Step, Shadow);
-        BitBlt(Canvas.Handle, 0, Step, Width, Height - Step, FBackground.Canvas.Handle, 0, Step, SRCCOPY);
-        end;
-      end
-      else
-        // Last step during slide or the only step without animation.
-        if DoGetAnimationType <> hatFade then
-        begin
-          if Shadow > 0 then
+          // Still force tooltip back and text color.
+          Font.Color := clInfoText;
+          Pen.Color := clBlack;
+          Brush.Color := clInfoBk;
+          if IsWinVistaOrAbove and StyleServices.Enabled and ((toThemeAware in Tree.TreeOptions.PaintOptions) or
+             (toUseExplorerTheme in Tree.TreeOptions.PaintOptions)) then
           begin
-            with FBackground do
-              BitBlt(Canvas.Handle, 0, 0, Width - Shadow, Height - Shadow, FDrawBuffer.Canvas.Handle, 0, 0, SRCCOPY);
-
-            DrawHintShadow(FBackground.Canvas, Shadow);
-            BitBlt(Canvas.Handle, 0, 0, Width, Height, FBackground.Canvas.Handle, 0, 0, SRCCOPY);
+            if toUseExplorerTheme in Tree.TreeOptions.PaintOptions then // ToolTip style
+              StyleServices.DrawElement(Canvas.Handle, StyleServices.GetElementDetails(tttStandardNormal), R)
+            else
+              begin // Hint style
+                LClipRect := R;
+                InflateRect(R, 4, 4);
+                StyleServices.DrawElement(Handle, StyleServices.GetElementDetails(tttStandardNormal), R, @LClipRect);
+                R := LClipRect;
+                StyleServices.DrawEdge(Handle, StyleServices.GetElementDetails(twWindowRoot), R, [eeRaisedOuter], [efRect]);
+              end;
           end
           else
-            BitBlt(Canvas.Handle, 0, 0, Width, Height, FDrawBuffer.Canvas.Handle, 0, 0, SRCCOPY);
+            if Tree.VclStyleEnabled then
+              StyleServices.DrawElement(Canvas.Handle, StyleServices.GetElementDetails(tttStandardNormal), R)
+            else
+              Rectangle(R);
         end;
-
-end;
-
-//----------------------------------------------------------------------------------------------------------------------
-
-procedure TVirtualTreeHintWindow.Paint;
-
-begin
-  InternalPaint(0, 0);
-end;
-
-//----------------------------------------------------------------------------------------------------------------------
-
-procedure TVirtualTreeHintWindow.ActivateHint(Rect: TRect; const AHint: string);
-
-var
-  DC: HDC;
-  StopLastAnimation: Boolean;
-  lCursorPos: TPoint;
-begin
-  if IsRectEmpty(Rect) or not Assigned(FHintData.Tree) or
-     not GetCursorPos(lCursorPos) or not PtInRect(FHintData.Tree.FLastHintRect, FHintData.Tree.ScreenToClient(lCursorPos))
-  then
-    Application.CancelHint
-  else
-  begin
-    // There is already an animation. Start a new one but do not continue the old one once we are finished here.
-    StopLastAnimation := (tsInAnimation in FHintData.Tree.FStates);
-    if StopLastAnimation then
-      FHintData.Tree.DoStateChange([], [tsInAnimation]);
-
-    SetWindowPos(Handle, 0, Rect.Left, Rect.Top, Width, Height, SWP_HIDEWINDOW or SWP_NOACTIVATE or SWP_NOZORDER);
-    UpdateBoundsRect(Rect);
-
-    // Make sure the whole hint is visible on the monitor. Don't forget multi-monitor systems with the
-    // primary monitor not being at the top-left corner.
-    if Rect.Top - Screen.DesktopTop + Height > Screen.DesktopHeight then
-      Rect.Top := Screen.DesktopHeight - Height + Screen.DesktopTop;
-    if Rect.Left - Screen.DesktopLeft + Width > Screen.DesktopWidth then
-      Rect.Left := Screen.DesktopWidth - Width + Screen.DesktopLeft;
-    if Rect.Bottom - Screen.DesktopTop < Screen.DesktopTop then
-      Rect.Bottom := Screen.DesktopTop + Screen.DesktopTop;
-    if Rect.Left - Screen.DesktopLeft < Screen.DesktopLeft then
-      Rect.Left := Screen.DesktopLeft + Screen.DesktopLeft;
-
-    // adjust sizes of bitmaps
-    FDrawBuffer.SetSize(Width, Height);
-    FBackground.SetSize(Width, Height);
-    FTarget.SetSize(Width, Height);
-
-    FHintData.Tree.Update;
-
-    // capture screen
-    DC := GetDC(0);
-    try
-      with TWithSafeRect(Rect) do
-        BitBlt(FBackground.Canvas.Handle, 0, 0, Width, Height, DC, Left, Top, SRCCOPY);
-    finally
-      ReleaseDC(0, DC);
-    end;
-
-    SetWindowPos(Handle, HWND_TOPMOST, Rect.Left, Rect.Top, Width, Height, SWP_SHOWWINDOW or SWP_NOACTIVATE);
-    with FHintData.Tree do
-      case DoGetAnimationType of
-        hatNone:
-      InvalidateRect(Self.Handle, nil, False);
-        hatFade:
-          begin
-            // Make sure the window is not drawn unanimated.
-            ValidateRect(Self.Handle, nil);
-            // Empirically determined animation duration shows that fading needs about twice as much time as
-            // sliding to show a comparable visual effect.
-            Animate(FadeAnimationStepCount, 2 * FAnimationDuration, AnimationCallback, nil);
-          end;
-        hatSlide:
-          begin
-            // Make sure the window is not drawn unanimated.
-            ValidateRect(Self.Handle, nil);
-            Animate(Self.Height, FAnimationDuration, AnimationCallback, nil);
-          end;
+        // Determine text position and don't forget the border.
+        InflateRect(R, -1, -1);
+        DrawFormat := DT_TOP or DT_NOPREFIX;
+        SetBkMode(Handle, Winapi.Windows.TRANSPARENT);
+        R.Top := Y;
+        R.Left := R.Left + 3; // Make the text more centered
+        if Assigned(Node) and (LineBreakStyle = hlbForceMultiLine) then
+          DrawFormat := DrawFormat or DT_WORDBREAK;
+        Winapi.Windows.DrawTextW(Handle, PWideChar(HintText), Length(HintText), R, DrawFormat);
       end;
-    if not FHintWindowDestroyed and StopLastAnimation and Assigned(FHintData.Tree) then
-      FHintData.Tree.DoStateChange([tsCancelHintAnimation]);
   end;
 end;
 
@@ -6102,14 +5825,6 @@ begin
           GetTextMetrics(Canvas.Handle, TM);
           FTextHeight := TM.tmHeight;
           LineBreakStyle := hlbDefault;
-
-          if Length(DefaultHint) > 0 then
-            HintText := DefaultHint
-          else
-            if Tree.HintMode = hmToolTip then
-              HintText := Tree.DoGetNodeToolTip(Node, Column, LineBreakStyle)
-            else
-              HintText := Tree.DoGetNodeHint(Node, Column, LineBreakStyle);
 
           if Length(HintText) = 0 then
             Result := Rect(0, 0, 0, 0)
@@ -8817,6 +8532,7 @@ end;
 function TVirtualTreeColumns.Add: TVirtualTreeColumn;
 
 begin
+  Assert(GetCurrentThreadId = MainThreadId, 'UI controls may only be chnaged in UI thread.');
   Result := TVirtualTreeColumn(inherited Add);
 end;
 
@@ -16333,35 +16049,30 @@ begin
       begin
         Result := 0;
         ShowOwnHint := False;
-        // Assign a dummy string otherwise the VCL will not show the hint window.
-        if GetHintWindowClass.InheritsFrom(TVirtualTreeHintWindow) then
-          HintStr := ' '
-        else
+
+        //workaround for issue #291
+        //it duplicates parts of the following code and code in TVirtualTreeHintWindow
+        HintStr := '';
+        if FHeader.UseColumns and (hoShowHint in FHeader.FOptions) and FHeader.InHeader(CursorPos) then
         begin
-          //workaround for issue #291
-          //it duplicates parts of the following code and code in TVirtualTreeHintWindow
-          HintStr := '';
-          if FHeader.UseColumns and (hoShowHint in FHeader.FOptions) and FHeader.InHeader(CursorPos) then
-          begin
-            CursorRect := FHeaderRect;
-            // Convert the cursor rectangle into real client coordinates.
-            OffsetRect(CursorRect, 0, -Integer(FHeader.FHeight));
-            HitInfo.HitColumn := FHeader.FColumns.GetColumnAndBounds(CursorPos, CursorRect.Left, CursorRect.Right);
-            if (HitInfo.HitColumn > NoColumn) and not (csLButtonDown in ControlState) and
-              (FHeader.FColumns[HitInfo.HitColumn].FHint <> '') then
-              HintStr := FHeader.FColumns[HitInfo.HitColumn].FHint;
-          end
+          CursorRect := FHeaderRect;
+          // Convert the cursor rectangle into real client coordinates.
+          OffsetRect(CursorRect, 0, -Integer(FHeader.FHeight));
+          HitInfo.HitColumn := FHeader.FColumns.GetColumnAndBounds(CursorPos, CursorRect.Left, CursorRect.Right);
+          if (HitInfo.HitColumn > NoColumn) and not (csLButtonDown in ControlState) and
+            (FHeader.FColumns[HitInfo.HitColumn].FHint <> '') then
+            HintStr := FHeader.FColumns[HitInfo.HitColumn].FHint;
+        end
+        else
+        if HintMode = hmDefault then
+          HintStr := GetShortHint(Hint)
+        else
+        if Assigned(HitInfo.HitNode) and (HitInfo.HitColumn > InvalidColumn) then
+        begin
+          if HintMode = hmToolTip then
+            HintStr := DoGetNodeToolTip(HitInfo.HitNode, HitInfo.HitColumn, DummyLineBreakStyle)
           else
-          if HintMode = hmDefault then
-            HintStr := GetShortHint(Hint)
-          else
-          if Assigned(HitInfo.HitNode) and (HitInfo.HitColumn > InvalidColumn) then
-          begin
-            if HintMode = hmToolTip then
-              HintStr := DoGetNodeToolTip(HitInfo.HitNode, HitInfo.HitColumn, DummyLineBreakStyle)
-            else
-              HintStr := DoGetNodeHint(HitInfo.HitNode, HitInfo.HitColumn, DummyLineBreakStyle);
-          end;
+            HintStr := DoGetNodeHint(HitInfo.HitNode, HitInfo.HitColumn, DummyLineBreakStyle);
         end;
 
         // First check whether there is a header hint to show.
@@ -16379,8 +16090,8 @@ begin
           //       cancel this with ESC.
           if (HitInfo.HitColumn > NoColumn) and not (csLButtonDown in ControlState) then
           begin
-            FHintData.DefaultHint := FHeader.FColumns[HitInfo.HitColumn].FHint;
-            if FHintData.DefaultHint <> '' then
+            HintStr := FHeader.FColumns[HitInfo.HitColumn].FHint;
+            if HintStr <> '' then
               ShowOwnHint := True
             else
               Result := 1;
@@ -16436,7 +16147,6 @@ begin
                   ColRight := ClientWidth;
                 end;
 
-                FHintData.DefaultHint := '';
                 if FHintMode <> hmTooltip then
                 begin
                   // Node specific hint text.
@@ -16480,7 +16190,6 @@ begin
                   if ShowOwnHint then
                   begin
                     // Node specific hint text given will be retrieved when needed.
-                    FHintData.DefaultHint := '';
                     HintPos := ClientToScreen(Point(NodeRect.Left, NodeRect.Top));
                     CursorRect := NodeRect;
                   end
@@ -16497,9 +16206,9 @@ begin
               // No node so fall back to control's hint (if indicated) or show nothing.
               if FHintMode = hmHintAndDefault then
               begin
-                FHintData.DefaultHint := GetShortHint(Hint);
+                HintStr := GetShortHint(Hint);
 
-                // Fix for the problem: Default Hint once shown stayed even when 
+                // Fix for the problem: Default Hint once shown stayed even when
                 // node hint was to be displayed. The reason was that CursorRect
                 // was for the full client area. Now reducing it to remove the
                 // columns from it.
@@ -16508,7 +16217,7 @@ begin
                 else
                   CursorRect.right := CursorRect.right - Header.Columns.TotalWidth;
 
-                if Length(FHintData.DefaultHint) = 0 then
+                if Length(HintStr) = 0 then
                   Result := 1
                 else
                   ShowOwnHint := True;
@@ -16523,7 +16232,7 @@ begin
         if ShowOwnHint and (Result = 0) then
         begin
           HintWindowClass := GetHintWindowClass;
-
+          FHintData.HintText := HintStr;
           FHintData.Tree := Self;
           FHintData.Column := HitInfo.HitColumn;
           FHintData.Node := HitInfo.HitNode;
@@ -18880,7 +18589,7 @@ begin
       if not Application.Terminated then
         Callback(0, 0, Data);
     finally
-      DoStateChange([], [tsCancelHintAnimation, tsInAnimation]);
+      DoStateChange([], [tsInAnimation]);
     end;
   end;
 end;
@@ -19020,6 +18729,10 @@ begin
         if UtilityImages.Height <> MulDiv(UtilityImageSize, M, D) then
           ScaleImageList(UtilityImages, M, D);
         <<<}
+        SystemCheckImages.Free;
+        CreateSystemImageSet(Handle, SystemCheckImages, ILC_COLOR32 or ILC_MASK, False);
+        if FCheckImageKind = ckSystemDefault then
+          FCheckImages := SystemCheckImages;
         // Scale also node heights
         BeginUpdate();
         try
@@ -22458,7 +22171,7 @@ end;
 
 function TBaseVirtualTree.GetHintWindowClass: THintWindowClass;
 
-// Returns the default hint window class used for the tree. Descendants can override it to use their own System.Classes.
+// Returns the default hint window class used for the tree. Descendants can override it to use their own classes.
 
 begin
   Result := TVirtualTreeHintWindow;
@@ -23497,8 +23210,10 @@ begin
     if (FHeader.FColumns.FClickIndex > NoColumn) and (FHeader.FColumns.FClickIndex = HitInfo.HitColumn) then
       DoColumnClick(HitInfo.HitColumn, KeysToShiftState(Message.Keys));
 
-      if FLastHitInfo.HitNode <> nil then  // Use THitInfo of mouse down here, see issue #692
-     DoNodeClick(FLastHitInfo);
+    if FLastHitInfo.HitNode <> nil then begin // Use THitInfo of mouse down here, see issue #692
+      DoNodeClick(FLastHitInfo);
+      FLastHitInfo.HitNode := nil; // prevent firing the event again
+    end;
 
     // handle a pending edit event
     if tsEditPending in FStates then
@@ -24599,6 +24314,7 @@ var
   R: TRect;
   Details: TThemedElementDetails;
   lSize: TSize;
+  Theme: HTHEME;
 begin
   with ImageInfo do
   begin
@@ -24636,18 +24352,29 @@ begin
       else
         Details := StyleServices.GetElementDetails(tbButtonRoot);
       end;
-      if (Index in [21..24]) or   not StyleServices.GetElementSize(Canvas.Handle, Details, TElementSize.esActual, lSize) then begin
-        // radio buttons fail in RAD Studio 10 Seattle and lower, fallback to checkbox images. See issue #615
-        if not StyleServices.GetElementSize(Canvas.Handle, StyleServices.GetElementDetails(tbCheckBoxUncheckedNormal), TElementSize.esActual, lSize) then
-          lSize := TSize.Create(GetSystemMetrics(SM_CXMENUCHECK), GetSystemMetrics(SM_CYMENUCHECK));
-      end;//if
-      R := Rect(XPos, YPos, XPos + lSize.cx, YPos + lSize.cy);
+      if StyleServices.IsSystemStyle and not (Index in [21..24]) then
+      begin
+        Theme := OpenThemeData(Handle, 'BUTTON');
+        GetThemePartSize(Theme, Canvas.Handle, Details.Part, Details.State, nil, TS_TRUE, lSize);
+        R := Rect(XPos, YPos, XPos + lSize.cx, YPos + lSize.cy);
+        DrawThemeBackground(Theme, Canvas.Handle, Details.Part, Details.State, R, nil);
+        CloseThemeData(Theme);
+      end
+      else
+      begin
+        if (Index in [21..24]) or   not StyleServices.GetElementSize(Canvas.Handle, Details, TElementSize.esActual, lSize) then begin
+          // radio buttons fail in RAD Studio 10 Seattle and lower, fallback to checkbox images. See issue #615
+          if not StyleServices.GetElementSize(Canvas.Handle, StyleServices.GetElementDetails(tbCheckBoxUncheckedNormal), TElementSize.esActual, lSize) then
+            lSize := TSize.Create(GetSystemMetrics(SM_CXMENUCHECK), GetSystemMetrics(SM_CYMENUCHECK));
+        end;//if
+        R := Rect(XPos, YPos, XPos + lSize.cx, YPos + lSize.cy);
 
-      StyleServices.DrawElement(Canvas.Handle, Details, R);
-      Canvas.Refresh;
+        StyleServices.DrawElement(Canvas.Handle, Details, R);
+        Canvas.Refresh;
 
-      if Index in [21..24] then
-        UtilityImages.Draw(Canvas, XPos, YPos, 4);  //Does anyone know what this was good for?
+        if Index in [21..24] then
+          UtilityImages.Draw(Canvas, XPos, YPos, 4);  //Does anyone know what this was good for?
+      end
     end
     else
       with FCheckImages do
@@ -28606,6 +28333,7 @@ var
   NextNode: PVirtualNode;
   TextLeft,
   CurrentWidth: Integer;
+  lOffsets: TVTOffsets;
 begin
   if OperationCanceled then
   begin
@@ -28634,7 +28362,8 @@ begin
 
     while Assigned(Run) and not OperationCanceled do
     begin
-      TextLeft := GetOffset(TVTElement.ofsLabel, Run);
+      GetOffsets(Run, lOffsets, TVTElement.ofsLabel, Column);
+      TextLeft := lOffsets[TVTElement.ofsLabel];
       CurrentWidth := DoGetNodeWidth(Run, Column);
       Inc(CurrentWidth, DoGetNodeExtraWidth(Run, Column));
       Inc(CurrentWidth, DoGetCellContentMargin(Run, Column).X);
@@ -30565,6 +30294,7 @@ function TBaseVirtualTree.InvalidateNode(Node: PVirtualNode): TRect;
 
 begin
   Assert(Assigned(Node), 'Node must not be nil.');
+  Assert(GetCurrentThreadId = MainThreadId, 'UI controls may only be chnaged in UI thread.');
   // Reset height measured flag too to cause a re-issue of the OnMeasureItem event.
   Exclude(Node.States, vsHeightMeasured);
   if (FUpdateCount = 0) and HandleAllocated then
@@ -32581,7 +32311,6 @@ procedure TBaseVirtualTree.SelectAll(VisibleOnly: Boolean);
 var
   Run: PVirtualNode;
   NextFunction: TGetNextNodeProc;
-  lUseBeginEndUpdate: Boolean;
 begin
   if not FSelectionLocked and (toMultiSelect in FOptions.FSelectionOptions) then
   begin
@@ -32596,9 +32325,7 @@ begin
       Run := GetFirst;
       NextFunction := GetNext;
     end;
-    lUseBeginEndUpdate := Assigned(OnInitChildren); // See issue #680
-    if lUseBeginEndUpdate then
-      BeginUpdate;
+    BeginUpdate();  // Improve performance, see issue #690
     try
       while Assigned(Run) do
       begin
@@ -32610,8 +32337,7 @@ begin
         AddToSelection(FTempNodeCache, FTempNodeCount);
       ClearTempCache;
     finally
-      if lUseBeginEndUpdate then
-        EndUpdate();
+      EndUpdate();
     end;//try..finally
     Invalidate;
   end;
