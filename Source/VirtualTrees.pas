@@ -23353,8 +23353,7 @@ begin
       if ivsMultiline in InitStates then
         Include(States, vsMultiline);
       {>>>}
-      if ivsHidden in InitStates then
-        SetVisible(Node, False);
+      SetVisible(Node, not (ivsHidden in InitStates));
       {<<<}
       if ivsFiltered in InitStates then
       begin
