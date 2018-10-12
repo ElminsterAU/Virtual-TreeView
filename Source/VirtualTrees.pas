@@ -32056,7 +32056,12 @@ begin
   end;
 
   if Recursive then
-    ReinitChildren(Node, True);
+    {>>>}
+    if (toAutoFreeOnCollapse in TreeOptions.AutoOptions) and not Expanded[Node] then
+      DeleteChildren(Node)
+    else
+	{<<<}
+      ReinitChildren(Node, True);
 end;
 
 //----------------------------------------------------------------------------------------------------------------------
