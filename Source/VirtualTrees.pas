@@ -14589,6 +14589,9 @@ var
   Remaining: Cardinal;
   Index: Cardinal;
   Child: PVirtualNode;
+  {>>>}
+  NextChild: PVirtualNode;
+  {<<<}
   Count: Integer;
   NewHeight: Integer;
 begin
@@ -14665,6 +14668,19 @@ begin
         begin
           // Nodes have to be deleted.
           Remaining := Node.ChildCount - NewChildCount;
+		  {>>>}
+          //delete uninitialized nodes first
+          Child := Node.LastChild;
+          while (Remaining > 0) and Assigned(Child) do begin
+            NextChild := Child.PrevSibling;
+            if not (vsInitialized in Child.States) then begin
+              DeleteNode(Child);
+              Dec(Remaining);
+            end;
+            Child := NextChild;
+          end;
+          // no choice but to remove initialized nodes
+		  {<<<}
           while Remaining > 0 do
           begin
             DeleteNode(Node.LastChild);
