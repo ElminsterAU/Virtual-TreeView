@@ -29090,6 +29090,8 @@ begin
   // It corresponds always to the top position of the currently considered node.
   CurrentPos := 0;
   {>>>}
+  CurrentIndex := 0;
+  {<<<}
 
   // If the cache is available then use it.
   if tsUseCache in FStates then
