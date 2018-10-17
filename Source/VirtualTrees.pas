@@ -18741,8 +18741,10 @@ begin
         FMargin := MulDiv(FMargin, M, D);
         FImagesMargin := MulDiv(FImagesMargin, M, D);
         // Scale utility images, #796
+        {>>>
         if UtilityImages.Height <> MulDiv(UtilityImageSize, M, D) then
           ScaleImageList(UtilityImages, M, D);
+        <<<}
         SystemCheckImages.Free;
         CreateSystemImageSet(Handle, SystemCheckImages, ILC_COLOR32 or ILC_MASK, False);
         if FCheckImageKind = ckSystemDefault then
