@@ -5688,7 +5688,7 @@ begin
     end
     else
     begin
-      Tree.GetTextInfo(Node, Column, Canvas.Font, R, S);
+      Tree.GetTextInfo(Node, Column, Canvas.Font, R,{>>>} False{<<<}, S);
       if LineBreakStyle = hlbForceMultiLine then
         Y := 1
       else
