@@ -1522,6 +1522,10 @@ type
     tsToggling,               // A toggle operation (for some node) is in progress.
     tsUpdateHiddenChildrenNeeded, // Pending update for the hidden children flag after massive visibility changes.
     tsUpdating,               // The tree does currently not update its window because a BeginUpdate has not yet ended.
+{>>>}
+    tsUpdatePending,           // Pending general update
+    tsSortPending,       // Pending update for sorting
+{<<<}
     tsUseCache,               // The tree's node caches are validated and non-empty.
     tsUserDragObject,         // Signals that the application created an own drag object in OnStartDrag.
     tsUseThemes,              // The tree runs under WinXP+, is theme aware and themes are enabled.
@@ -3059,7 +3063,7 @@ type
     procedure Assign(Source: TPersistent); override;
     procedure BeginDrag(Immediate: Boolean; Threshold: Integer = -1);
     procedure BeginSynch;
-    procedure BeginUpdate; virtual;
+    procedure BeginUpdate{>>>}(aForce: Boolean = False){<<<}; virtual;
     procedure CancelCutOrCopy;
     function CancelEditNode: Boolean;
     procedure CancelOperation;
@@ -4794,6 +4798,10 @@ begin
             begin
               ValidateCache;
               Invalidate;
+            {>>>}
+            end else begin
+              Include(FStates, tsUpdatePending);
+            {<<<}
             end;
           end;
 
@@ -10010,7 +10018,12 @@ begin
   begin
     FSortDirection := Value;
     Invalidate(nil);
-    if ((toAutoSort in Treeview.FOptions.FAutoOptions) or (hoHeaderClickAutoSort in Options)) and (Treeview.FUpdateCount = 0) then
+    if ((toAutoSort in Treeview.FOptions.FAutoOptions) or (hoHeaderClickAutoSort in Options)) {>>>and (Treeview.FUpdateCount = 0)<<<} then
+    {>>>}
+      if Treeview.FUpdateCount > 0 then
+        Include(Treeview.FStates, tsSortPending)
+      else
+    {<<<}
       Treeview.SortTree(FSortColumn, FSortDirection, True);
   end;
 end;
@@ -10315,7 +10328,12 @@ begin
     FSortDirection := pSortDirection;
     if FSortColumn > NoColumn then
       Invalidate(Columns[FSortColumn]);
-    if ((toAutoSort in Treeview.FOptions.FAutoOptions) or (hoHeaderClickAutoSort in Options)) and (Treeview.FUpdateCount = 0) then
+    if ((toAutoSort in Treeview.FOptions.FAutoOptions) or (hoHeaderClickAutoSort in Options)) {>>>and (Treeview.FUpdateCount = 0)<<<} then
+    {>>>}
+      if Treeview.FUpdateCount > 0 then
+        Include(Treeview.FStates, tsSortPending)
+      else
+    {<<<}
       Treeview.SortTree(FSortColumn, FSortDirection, True);
   end;
 end;
@@ -12093,7 +12111,10 @@ begin
   begin
     FColors := TVTColors(Source).FColors;
     if FOwner.FUpdateCount = 0 then
-      FOwner.Invalidate;
+      FOwner.Invalidate{>>>;}
+    else
+      Include(FOwner.FStates, tsUpdatePending);
+    {<<<}
   end
   else
     inherited;
@@ -14501,7 +14522,9 @@ begin
     else
       FCheckImages := SystemCheckImages;
     if HandleAllocated and (FUpdateCount = 0) and not (csLoading in ComponentState) then
-      InvalidateRect(Handle, nil, False);
+      InvalidateRect(Handle, nil, False){>>>}
+    else if FUpdateCount > 0 then
+      Include(FStates, tsUpdatePending){<<<};
   end;
 end;
 
@@ -14656,9 +14679,12 @@ begin
 		  {>>>}
           Node.SortGeneration := 0;
 		  {<<<}
-          if (FUpdateCount = 0) and (toAutoSort in FOptions.FAutoOptions) and (FHeader.FSortColumn > InvalidColumn) then
+          if {>>>(FUpdateCount = 0) and <<<}(toAutoSort in FOptions.FAutoOptions) and (FHeader.FSortColumn > InvalidColumn) then
 		  {>>>}
             if FullyVisible[Node] and (vsExpanded in Node.States) then
+            if FUpdateCount > 0 then
+              Include(FStates, tsSortPending)
+            else
 		  {<<<}
             Sort(Node, FHeader.FSortColumn, FHeader.FSortDirection, True);
 
@@ -14693,6 +14719,10 @@ begin
           ValidateCache;
           UpdateScrollBars(True);
           Invalidate;
+        {>>>}
+        end else begin
+          Include(FStates, tsUpdatePending);
+        {<<<}
         end;
 
         if Node = FRoot then
@@ -14773,7 +14803,12 @@ begin
     Inc(SmallInt(FRoot.NodeHeight), Integer(Value) - Integer(FDefaultNodeHeight));
     FDefaultNodeHeight := Value;
     InvalidateCache;
-    if (FUpdateCount = 0) and HandleAllocated and not (csLoading in ComponentState) then
+    if {>>>(FUpdateCount = 0) and <<<}HandleAllocated and not (csLoading in ComponentState) then
+    {>>>}
+    if FUpdateCount = 0 then
+      Include(FStates, tsUpdatePending)
+    else
+    {<<<}
     begin
       ValidateCache;
       UpdateScrollBars(True);
@@ -14796,7 +14831,10 @@ begin
       Exclude(Node.States, vsDisabled);
 
     if FUpdateCount = 0 then
-      InvalidateNode(Node);
+      InvalidateNode(Node){>>>;}
+    else
+      Include(FStates, tsUpdatePending);
+    {<<<}
   end;
 end;
 
@@ -15003,7 +15041,12 @@ begin
     end;
 
     InvalidateCache;
-    if NeedUpdate and (FUpdateCount = 0) then
+    if NeedUpdate {>>>and (FUpdateCount = 0)<<<} then
+    {>>>}
+    if FUpdateCount > 0 then
+      Include(FStates, tsUpdatePending)
+    else
+    {<<<}
     begin
       ValidateCache;
       UpdateScrollBars(True);
@@ -15042,7 +15085,12 @@ begin
   if FIndent <> Value then
   begin
     FIndent := Value;
-    if not (csLoading in ComponentState) and (FUpdateCount = 0) and HandleAllocated then
+    if not (csLoading in ComponentState) {>>>and (FUpdateCount = 0)<<<} and HandleAllocated then
+    {>>>}
+    if FUpdateCount > 0 then
+      Include(FStates, tsUpdatePending)
+    else
+    {<<<}
     begin
       UpdateScrollBars(True);
       Invalidate;
@@ -15107,7 +15155,10 @@ begin
         Exclude(Node.States, vsMultiline);
 
       if FUpdateCount = 0 then
-        InvalidateNode(Node);
+        InvalidateNode(Node){>>>;}
+      else
+        Include(FStates, tsUpdatePending);
+      {<<<}
     end;
 end;
 
@@ -15205,7 +15256,12 @@ begin
       // Stay away from touching the node cache while it is being validated.
       if not (tsValidating in FStates) and FullyVisible[Node] and not IsEffectivelyFiltered[Node] then
       begin
-        if (FUpdateCount = 0) and ([tsPainting, tsSizing] * FStates = []) then
+        if {>>>(FUpdateCount = 0) and<<<} ([tsPainting, tsSizing] * FStates = []) then
+        {>>>}
+        if FUpdateCount > 0 then
+          Include(FStates, tsUpdatePending)
+        else
+        {<<<}
         begin
           ValidateCache;
           InvalidateToBottom(Node);
@@ -15500,7 +15556,12 @@ begin
     end;
 
     InvalidateCache;
-    if NeedUpdate and (FUpdateCount = 0) then
+    if NeedUpdate {>>>and (FUpdateCount = 0)<<<} then
+    {>>>}
+    if FUpdateCount > 0 then
+      Include(FStates, tsUpdatePending)
+    else
+    {<<<}
     begin
       ValidateCache;
       UpdateScrollBars(True);
@@ -18710,7 +18771,10 @@ begin
       SetTimer(Handle, ChangeTimer, FChangeDelay, nil)
     else
       DoChange(Node);
-  end;
+  end{>>>;}
+  else
+    Include(FStates, tsUpdatePending);
+  {<<<}
 end;
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -20363,7 +20427,12 @@ begin
       if (toAutoExpand in FOptions.FAutoOptions) and not (vsExpanded in FFocusedNode.States) then
         ToggleNode(FFocusedNode);
       InvalidateNode(FFocusedNode);
-      if (FUpdateCount = 0) and not (toDisableAutoscrollOnFocus in FOptions.FAutoOptions) then
+      if {>>>(FUpdateCount = 0) and<<<} not (toDisableAutoscrollOnFocus in FOptions.FAutoOptions) then
+      {>>>}
+      if FUpdateCount > 0 then
+        Include(FStates, tsUpdatePending)
+      else
+      {<<<}
         ScrollIntoView(FFocusedNode, (toCenterScrollIntoView in FOptions.SelectionOptions) and
           (MouseButtonDown * FStates = []), not (toFullRowSelect in FOptions.SelectionOptions) );
     end;
@@ -21131,6 +21200,10 @@ begin
 
       if tsVCLDragging in FStates then
         ImageList_DragShowNolock(True);
+    {>>>}
+    end else begin
+      Include(FStates, tsUpdatePending);
+    {<<<}
     end;
 
     // Finally update "hot" node if hot tracking is activated
@@ -23369,7 +23442,8 @@ begin
           if FullyVisible[Node] then
             Dec(FVisibleCount);
           if FUpdateCount = 0 then
-            UpdateScrollBars(True);
+            UpdateScrollBars(True){>>>}
+          else Include(FStates, tsUpdatePending){<<<};
         end;
       end;
 
@@ -25581,7 +25655,8 @@ begin
       SetTimer(Handle, StructureChangeTimer, FChangeDelay, nil)
     else
       DoStructureChange(Node, Reason);
-  end;
+  end{>>>}else
+    Include(FStates, tsUpdatePending){<<<};
 end;
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -26503,7 +26578,7 @@ end;
 
 //----------------------------------------------------------------------------------------------------------------------
 
-procedure TBaseVirtualTree.BeginUpdate;
+procedure TBaseVirtualTree.BeginUpdate{>>>}(aForce: Boolean){<<<};
 
 begin
   Assert(GetCurrentThreadId = MainThreadId, 'UI controls like ' + Classname + ' should only be manipulated through the main thread.');
@@ -26519,6 +26594,10 @@ begin
   end;
   Inc(FUpdateCount);
   DoStateChange([tsUpdating]);
+  {>>>}
+  if aForce then
+    Include(FStates, tsUpdatePending);
+  {<<<}
 end;
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -26683,7 +26762,12 @@ begin
   Assert(GetCurrentThreadId = MainThreadId, Self.Classname + '.ClearSelection() must only be called from UI thread.');
   if not FSelectionLocked and (FSelectionCount > 0) and not (csDestroying in ComponentState) then
   begin
-    if (FUpdateCount = 0) and HandleAllocated and (FVisibleCount > 0) then
+    if {>>>(FUpdateCount = 0) and<<<} HandleAllocated and (FVisibleCount > 0) then
+    {>>>}
+    if FUpdateCount > 0 then
+      Include(FStates, tsUpdatePending)
+    else
+    {<<<}
     begin
       // Iterate through nodes currently visible in the client area and invalidate them.
       Node := GetNodeAt(0, 0, True, Dummy{>>>}, Dummy2{<<<});
@@ -26817,7 +26901,8 @@ begin
           ValidateCache;
           UpdateScrollBars(True);
           Invalidate;
-        end;
+        end{>>>}else
+          Include(FStates, tsUpdatePending){<<<};
         StructureChange(Source, crNodeCopied);
       end;
     end;
@@ -26950,7 +27035,8 @@ begin
         DoChange(FLastChangedNode);
         EnsureNodeSelected();
       end;
-    end;
+    end{>>>}else
+      Include(FStates, tsUpdatePending){<<<};
     StructureChange(Node, crChildDeleted);
   end
   else if ResetHasChildren then
@@ -27013,8 +27099,13 @@ begin
           Exclude(FStates, tsSynchMode);
         InvalidateToBottom(LastParent);
       end
-      else
+      else{>>>} begin
+        Include(FStates, tsUpdatePending);
+      {<<<}
         InternalRemoveFromSelection(Node);
+      {>>>}
+      end;
+      {<<<}
     end
     else
       InvalidateToBottom(LastParent);
@@ -27034,7 +27125,8 @@ begin
         // bottom node in the treeview.
         if (LastLeft <> FOffsetX) or (LastTop <> FOffsetY) then
           Invalidate;
-      end;
+      end{>>>}else
+        Include(FStates, tsUpdatePending){<<<};
     end;
   end;
 end;
@@ -27182,6 +27274,11 @@ begin
 
       DoStateChange([], [tsUpdating]);
 
+      {>>>}
+      if (FStates * [tsUpdatePending, tsUpdateHiddenChildrenNeeded, tsSortPending, tsStructureChangePending, tsChangePending] = []) then begin
+        SetUpdateState(False);
+      end else begin
+      {<<<}
       NewSize := PackArray(FSelection, FSelectionCount);
       if NewSize > -1 then
       begin
@@ -27200,14 +27297,25 @@ begin
         if tsChangePending in FStates then
           DoChange(FLastChangedNode);
       finally
+        {>>>}
+        if tsSortPending in FStates then begin
+        {<<<}
         if toAutoSort in FOptions.FAutoOptions then
           SortTree(FHeader.FSortColumn, FHeader.FSortDirection, True);
+        {>>>}
+          Exclude(FStates, tsSortPending);
+        end;
+        {<<<}
 
         SetUpdateState(False);
         if HandleAllocated then
           Invalidate;
         UpdateDesigner;
       end;
+      {>>>}
+      Exclude(FStates, tsUpdatePending);
+      end;
+      {<<<}
     end;
 
     if FUpdateCount = 0 then begin
@@ -30245,7 +30353,11 @@ begin
       end;
       InvalidateCache();
       UpdateScrollBars(True);
-    end;
+    end{>>>}else begin
+      Include(FStates, tsUpdatePending);
+      if (toAutoSort in FOptions.FAutoOptions) and (FHeader.FSortColumn > InvalidColumn) then
+        Include(FStates, tsSortPending);
+    end;{<<<};
   end
   else
     Result := nil;
@@ -30295,7 +30407,12 @@ var
   R: TRect;
 
 begin
-  if (FUpdateCount = 0) and HandleAllocated and FHeader.FColumns.IsValidColumn(Column) then
+  if {>>>(FUpdateCount = 0) and<<<} HandleAllocated and FHeader.FColumns.IsValidColumn(Column) then
+  {>>>}
+  if FUpdateCount > 0 then
+    Include(FStates, tsUpdatePending)
+  else
+  {<<<}
   begin
     R := ClientRect;
     FHeader.Columns.GetColumnBounds(Column, R.Left, R.Right);
@@ -30319,8 +30436,13 @@ begin
     Result := GetDisplayRect(Node, NoColumn, False);
     InvalidateRect(Handle, @Result, False);
   end
-  else
+  else{>>>} begin
+    Include(FStates, tsUpdatePending);
+  {<<<}
     result := Rect(-1,-1,-1,-1);
+  {>>>}
+  end;
+  {<<<}
 end;
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -30350,7 +30472,8 @@ begin
           InvalidateRect(Handle, @R, False);
         end;
       end;
-  end;
+  end{>>>}else
+      Include(FStates, tsUpdatePending){<<<};
 end;
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -30814,7 +30937,12 @@ begin
     end;
 
     InvalidateCache;
-    if (FUpdateCount = 0) and Allowed then
+    if {>>>(FUpdateCount = 0) and<<<} Allowed then
+    {>>>}
+    if FUpdateCount > 0 then
+      Include(FStates, tsUpdatePending)
+    else
+    {<<<}
     begin
       ValidateCache;
       UpdateScrollBars(True);
@@ -32184,9 +32312,12 @@ function TBaseVirtualTree.ScrollIntoView(Node: PVirtualNode; Center: Boolean; Ho
       if not (vsExpanded in aNode.States) then
         ToggleNode(aNode)
       else
-        if (FUpdateCount = 0) and (toAutoSort in FOptions.FAutoOptions) and (FHeader.FSortColumn > InvalidColumn) then
+        if (toAutoSort in FOptions.FAutoOptions) and (FHeader.FSortColumn > InvalidColumn) then
           if FullyVisible[aNode] then
-            DoSort(aNode, FHeader.FSortColumn, FHeader.FSortDirection, True);
+            if FUpdateCount > 0 then
+              Include(FStates, tsSortPending)
+            else
+              DoSort(aNode, FHeader.FSortColumn, FHeader.FSortDirection, True);
     end;
   end;
   {<<<}
@@ -32565,7 +32696,8 @@ begin
       begin
         ValidateCache;
         Invalidate;
-      end;
+      end{>>>}else
+        Include(FStates, tsUpdatePending){<<<};
 	  {>>>}
       Node.SortGeneration := FSortGeneration;
 	  {<<<}
@@ -32643,7 +32775,7 @@ begin
         DoSort(FRoot{>>>}, Column, Direction, DoInit{<<<});
       finally
         EndOperation(okSortTree);
-      end; 
+      end;
     end;
     InvalidateCache;
   finally
@@ -32653,7 +32785,8 @@ begin
     begin
       ValidateCache;
       Invalidate;
-    end;
+    end{>>>}else
+      Include(FStates, tsUpdatePending){<<<};
   end;
 end;
 
@@ -32832,7 +32965,9 @@ begin
                 end;
               end;
             end;
-          end;
+          end{>>>}else
+            if FUpdateCount > 0 then
+              Include(FStates, tsUpdatePending){<<<};
 
           // collapse the node
           AdjustTotalHeight(Node, IfThen(IsEffectivelyFiltered[Node], 0, NodeHeight[Node]));
@@ -33023,7 +33158,11 @@ begin
               end;
               if toAutoSort in FOptions.FAutoOptions then
                 {>>>Sort}DoSort{<<<}(Node, FHeader.FSortColumn, FHeader.FSortDirection, False);
-            end;// if UpdateCount = 0
+            end{>>>}else begin
+              Include(FStates, tsUpdatePending);
+              if toAutoSort in FOptions.FAutoOptions then
+                Include(FStates, tsSortPending);
+            end{<<<};
 
             Include(Node.States, vsExpanded);
             AdjustTotalHeight(Node, HeightDelta, True);
@@ -33102,6 +33241,7 @@ begin
         begin
           UpdateRanges;
           UpdateScrollBars(True);
+          {>>>}Include(FStates, tsUpdatePending);{<<<}
         end;
       end;
 
@@ -34727,7 +34867,9 @@ begin
 
   // The width might have changed, so update the scrollbar.
   if FUpdateCount = 0 then
-    UpdateHorizontalScrollBar(True);
+    UpdateHorizontalScrollBar(True){>>>}
+  else
+    Include(FStates, tsUpdatePending){<<<};
 end;
 
 //----------------------------------------------------------------------------------------------------------------------
