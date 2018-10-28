@@ -13920,13 +13920,10 @@ begin
   DoStateChange([tsStopValidation], [tsUseCache]);
 
   // Check the worker thread existance. It might already be gone (usually on destruction of the last tree).
-  if Assigned(WorkerThread) then
-  begin
-    WasValidating := (tsValidating in FStates);
-    WorkerThread.RemoveTree(Self);
-    if WasValidating then
-      InvalidateCache();
-  end;
+  WasValidating := (tsValidating in FStates);
+  TWorkerThread.RemoveTree(Self);
+  if WasValidating then
+    InvalidateCache();
 end;
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -26092,10 +26089,10 @@ begin
   InterruptValidation;
 
   FStartIndex := 0;
-  if (tsValidationNeeded in FStates) and (FVisibleCount > CacheThreshold) and Assigned(WorkerThread) then
+  if (tsValidationNeeded in FStates) and (FVisibleCount > CacheThreshold) then
   begin
     // Tell the thread this tree needs actually something to do.
-    WorkerThread.AddTree(Self);
+    TWorkerThread.AddTree(Self);
   end;
 end;
 
