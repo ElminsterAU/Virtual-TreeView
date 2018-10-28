@@ -12229,7 +12229,7 @@ begin
   FOptions := GetOptionsClass.Create(Self);
 
   if not (csDesigning in ComponentState) then //Don't create worker thread in IDE, there is no use for it
-    AddThreadReference;
+    TWorkerThread.AddThreadReference();
   VclStyleChanged();
 end;
 
@@ -12250,7 +12250,8 @@ begin
 
   InterruptValidation();
   Exclude(FOptions.FMiscOptions, toReadOnly);
-  ReleaseThreadReference(Self);
+  // Make sure there is no reference remaining to the releasing tree.
+  TWorkerThread.ReleaseThreadReference();
   StopWheelPanning;
   CancelEditNode;
 
