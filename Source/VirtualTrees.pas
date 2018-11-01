@@ -261,6 +261,9 @@ type
     coResizable,             // Column can be resized.
     coShowDropMark,          // Column shows the drop mark if it is currently the drop target.
     coVisible,               // Column is shown.
+    {>>>}
+    coFiller,                // If Column is the last visible column, it's width is adjusted to always fill the remaining ClientWidth
+    {<<<}
     coAutoSpring,            // Column takes part in the auto spring feature of the header (must be resizable too).
     coFixed,                 // Column is fixed and can not be selected or scrolled etc.
     coSmartResize,           // Column is resized to its largest entry which is in view (instead of its largest
@@ -9519,9 +9522,11 @@ end;
 function TVirtualTreeColumns.TotalWidth: Integer;
 
 var
-  LastColumn: TColumnIndex;
-
+  LastColumn : TColumnIndex;
 begin
+  {>>>}
+  LastColumn := NoColumn;
+  {<<<}
   Result := 0;
   if (Count > 0) and (Length(FPositionToIndex) > 0) then
   begin
@@ -9532,6 +9537,21 @@ begin
       with Items[LastColumn] do
         Result := FLeft + FWidth;
   end;
+
+  {>>>}
+  if (Result <> FHeader.TreeView.ClientWidth) then
+    if LastColumn > NoColumn then
+      with Items[LastColumn] do
+        if coFiller in FOptions then begin
+          Dec(Result, FWidth);
+          if (Result >= FHeader.TreeView.ClientWidth) then
+            FWidth := 0
+          else begin
+            FWidth := FHeader.TreeView.ClientWidth - Result;
+            Result := FHeader.TreeView.ClientWidth;
+          end;
+        end;        
+  {<<<} 
 end;
 
 //----------------- TVTFixedAreaConstraints ----------------------------------------------------------------------------
