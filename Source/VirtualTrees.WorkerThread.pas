@@ -12,29 +12,28 @@ type
   private
     FCurrentTree: TBaseVirtualTree;
     FWaiterList: TThreadList;
-    FRefCount: Cardinal;
+    FRefCount: Integer;
     class procedure EnsureCreated();
     class procedure Dispose();
-  strict protected
     procedure CancelValidation(Tree: TBaseVirtualTree);
+  protected
     procedure Execute; override;
   public
     constructor Create();
     destructor Destroy; override;
 
-    procedure AddTree(Tree: TBaseVirtualTree);
-    procedure RemoveTree(Tree: TBaseVirtualTree);
+    /// For lifeteime management of the TWorkerThread
+    class procedure AddThreadReference;
+    class procedure ReleaseThreadReference();
+
+    class procedure AddTree(Tree: TBaseVirtualTree);
+    class procedure RemoveTree(Tree: TBaseVirtualTree);
 
     property CurrentTree: TBaseVirtualTree read FCurrentTree;
   end;
 
 
-procedure AddThreadReference;
-procedure ReleaseThreadReference(Tree: TBaseVirtualTree);
 
-
-var
-  WorkerThread: TWorkerThread = nil;
 
 
 implementation
@@ -49,6 +48,7 @@ type
   end;
 
 var
+  WorkerThread: TWorkerThread = nil;
   WorkEvent: THandle;
 //----------------- TWorkerThread --------------------------------------------------------------------------------------
 
@@ -75,23 +75,19 @@ begin
 end;
 
 
-procedure AddThreadReference;
+class procedure TWorkerThread.AddThreadReference;
 begin
   TWorkerThread.EnsureCreated();
-  Inc(WorkerThread.FRefCount);
+  InterlockedIncrement(WorkerThread.FRefCount);
 end;
 
 //----------------------------------------------------------------------------------------------------------------------
 
-procedure ReleaseThreadReference(Tree: TBaseVirtualTree);
-
+class procedure TWorkerThread.ReleaseThreadReference();
 begin
   if Assigned(WorkerThread) then
   begin
-    Dec(WorkerThread.FRefCount);
-
-    // Make sure there is no reference remaining to the releasing tree.
-    TBaseVirtualTreeCracker(Tree).InterruptValidation;
+    InterlockedDecrement(WorkerThread.FRefCount);
 
     if WorkerThread.FRefCount = 0 then
       WorkerThread.Dispose();
@@ -200,19 +196,20 @@ end;
 
 //----------------------------------------------------------------------------------------------------------------------
 
-procedure TWorkerThread.AddTree(Tree: TBaseVirtualTree);
+class procedure TWorkerThread.AddTree(Tree: TBaseVirtualTree);
 
 begin
   Assert(Assigned(Tree), 'Tree must not be nil.');
+  TWorkerThread.EnsureCreated();
 
   // Remove validation stop flag, just in case it is still set.
   TBaseVirtualTreeCracker(Tree).DoStateChange([], [tsStopValidation]);
-  with FWaiterList.LockList do
+  with WorkerThread.FWaiterList.LockList do
   try
     if IndexOf(Tree) = -1 then
       Add(Tree);
   finally
-    FWaiterList.UnlockList;
+    WorkerThread.FWaiterList.UnlockList;
   end;
 
   SetEvent(WorkEvent);
@@ -220,18 +217,20 @@ end;
 
 //----------------------------------------------------------------------------------------------------------------------
 
-procedure TWorkerThread.RemoveTree(Tree: TBaseVirtualTree);
+class procedure TWorkerThread.RemoveTree(Tree: TBaseVirtualTree);
 
 begin
+  if not Assigned(WorkerThread) then
+    exit;
   Assert(Assigned(Tree), 'Tree must not be nil.');
 
-  with FWaiterList.LockList do
+  with WorkerThread.FWaiterList.LockList do
   try
     Remove(Tree);
   finally
-    FWaiterList.UnlockList; // Seen several AVs in this line, was called from TWorkerThrea.Destroy. Joachim Marder.
+    WorkerThread.FWaiterList.UnlockList; // Seen several AVs in this line, was called from TWorkerThrea.Destroy. Joachim Marder.
   end;
-  CancelValidation(Tree);
+  WorkerThread.CancelValidation(Tree);
 end;
 
 
