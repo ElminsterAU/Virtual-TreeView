@@ -22,7 +22,7 @@ uses
   Controls,
   VTEditors, VirtualTrees,
   cxEdit, cxTextEdit, cxDropDownEdit,cxCheckComboBox,
-  cxLookAndFeelPainters;
+  cxLookAndFeelPainters, cxLookAndFeels;
 
 type
   TcxCustomEditLink = class(TCustomEditLink)
@@ -173,6 +173,9 @@ begin
   if Key in [#13, #27] then Key := #0; // Eliminate beep
 end;
 
+type
+  TcxComboBoxHacker = class(TcxComboBox);
+
 procedure TcxComboEditLink.PrepareEditControl;
 begin
   inherited;
@@ -181,6 +184,14 @@ begin
       Properties := celProperties;
     OnKeyPress := KeyPress;
   end;
+  with TcxComboBoxHacker(EditControl) do begin
+    LookAndFeel.ScrollbarMode := sbmClassic;
+    LookAndFeel.TouchScrollUIMode := tsmDisabled;
+    PopupControlsLookAndFeel.ScrollbarMode := sbmClassic;
+    PopupControlsLookAndFeel.TouchScrollUIMode := tsmDisabled;
+  end;
+  RootLookAndFeel.ScrollbarMode := sbmClassic;
+  RootLookAndFeel.TouchScrollUIMode := tsmDisabled;
 end;
 
 procedure TcxComboEditLink.SetEditText(const Value: WideString);
@@ -291,6 +302,8 @@ begin
   if Key in [#13, #27] then Key := #0; // Eliminate beep
 end;
 
+type TcxCheckComboBoxHacker = class(TcxCheckComboBox);
+
 procedure TcxCheckComboEditLink.PrepareEditControl;
 begin
   inherited;
@@ -299,6 +312,14 @@ begin
       Properties := ccelProperties;
     OnKeyPress := KeyPress;
   end;
+  with TcxCheckComboBoxHacker(EditControl) do begin
+    LookAndFeel.ScrollbarMode := sbmClassic;
+    LookAndFeel.TouchScrollUIMode := tsmDisabled;
+    PopupControlsLookAndFeel.ScrollbarMode := sbmClassic;
+    PopupControlsLookAndFeel.TouchScrollUIMode := tsmDisabled;
+  end;
+  RootLookAndFeel.ScrollbarMode := sbmClassic;
+  RootLookAndFeel.TouchScrollUIMode := tsmDisabled;
 end;
 
 procedure TcxCheckComboEditLink.SetEditText(const aValue: WideString);
