@@ -135,8 +135,11 @@ end;
 
 function TcxComboEditLink.celGetProperties: TcxComboBoxProperties;
 begin
-  if not Assigned(celProperties) then
+  if not Assigned(celProperties) then begin
     celProperties := TcxComboBoxProperties.Create(Self);
+    celProperties.ImmediateUpdateText := True;
+    celProperties.ImmediatePost := True;
+  end;
   Result := celProperties;
 end;
 
