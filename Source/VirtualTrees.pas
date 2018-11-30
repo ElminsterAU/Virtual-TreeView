@@ -7973,7 +7973,7 @@ end;
 function TVirtualTreeColumns.CanSplitterResize(P: TPoint; Column: TColumnIndex): Boolean;
 
 begin
-  Result := (Column > NoColumn) and ([coResizable, coVisible] * Items[Column].FOptions = [coResizable, coVisible]);
+  Result := (Column > NoColumn) and ([coResizable, coVisible{>>>},coFiller{<<<}] * Items[Column].FOptions = [coResizable, coVisible]);
   DoCanSplitterResize(P, Column, Result);
 end;
 
