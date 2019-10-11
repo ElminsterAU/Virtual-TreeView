@@ -85,14 +85,19 @@ procedure FillDragRectangles(DragWidth, DragHeight, DeltaX, DeltaY: Integer; var
 //        call VirtualTrees.Utils.ApplyDragImage() with your `IDataObject` and your bitmap.
 procedure ApplyDragImage(const pDataObject: IDataObject; pBitmap: TBitmap);
 
-/// Returns Tree if the mouse cursor is currently visible and False in case it is suppressed.
+/// Returns True if the mouse cursor is currently visible and False in case it is suppressed.
 /// Useful when doing hot-tracking on touchscreens, see issue #766
 function IsMouseCursorVisible(): Boolean;
 
 procedure ScaleImageList(const ImgList: TImageList; M, D: Integer);
 
+/// Returns True if the high contrast theme is anabled in the system settings, False otherwise.
+function IsHighContrastEnabled(): Boolean;
+
+{>>>}
 function Lighter(Color: TColor; Amount: Double = 0.5): TColor;
 function Darker(Color: TColor; Amount: Double = 0.5): TColor;
+{<<<}
 
 implementation
 
@@ -1366,6 +1371,15 @@ begin
   end;
 end;
 
+function IsHighContrastEnabled(): Boolean;
+var
+  l: HIGHCONTRAST;
+begin
+  l.cbSize := SizeOf(l);
+  Result := SystemParametersInfo(SPI_GETHIGHCONTRAST, 0, @l, 0) and ((l.dwFlags and HCF_HIGHCONTRASTON) <> 0);
+end;
+
+{>>>}
 procedure RGBtoHSL(rgb : TRGBTriple; var H, S, L : extended);
 var
 	delta, r, g, b, cmax, cmin: extended;
@@ -1494,5 +1508,6 @@ begin
   HSLtoRGB(h, s, l, rgb);
   Result := RGBTripleToCol(rgb);
 end;
+{<<<}
 
 end.
