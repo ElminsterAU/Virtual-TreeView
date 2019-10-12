@@ -3474,7 +3474,7 @@ type
   TVTMeasureTextEvent = procedure(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode;
     Column: TColumnIndex; const Text: string; var Extent: Integer) of object;
   TVTDrawTextEvent = procedure(Sender: TBaseVirtualTree; TargetCanvas: TCanvas; Node: PVirtualNode;
-    Column: TColumnIndex; const Text: string; const CellRect: TRect; var DefaultDraw: Boolean) of object;
+    Column: TColumnIndex; const Text: string; {>>>const}var{<<<} CellRect: TRect; var DefaultDraw: Boolean) of object;
 
   /// Event arguments of the OnGetCellText event
   TVSTGetCellTextEventArgs = record
