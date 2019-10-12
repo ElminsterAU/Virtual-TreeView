@@ -24371,7 +24371,7 @@ begin
         end;//if
         R := Rect(XPos, YPos, XPos + lSize.cx, YPos + lSize.cy);
         StyleServices.DrawElement(Canvas.Handle, Details, R);
-        //Canvas.Refresh; // Why is this needed?
+        {>>>//<<<}Canvas.Refresh; // Why is this needed? >>>Because DrawElement is directly modifying the Canvas.Handle, the brush and font selected into that handle might no longer match the brush and font the canvas object thinks they are!<<<
       end;
       if (Index in [ckButtonNormal..ckButtonDisabled]) then begin
         Canvas.Pen.Color := clGray;
