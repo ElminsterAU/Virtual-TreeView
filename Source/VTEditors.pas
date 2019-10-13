@@ -710,7 +710,7 @@ end;
 
 procedure TEditEditLink.KeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key in [#13, #27] then Key := #0; // Eliminate beep
+  if ((Key = #13) or (Key = #27)) then Key := #0; // Eliminate beep
 end;
 
 function TEditEditLink.GetEditText: WideString;
@@ -862,7 +862,7 @@ var
   S, S1: string;
   I, St, L: Integer;
 begin
-  if (FStyle in [csDropDown, csSimple]) and (Key in [#32 .. #255]) then
+  if (FStyle in [csDropDown, csSimple]) and (Ord(Key) >= 32) then
     with TLinkComboBox(EditControl) do
       case FAutoCompleteMode of
         acComplete:
@@ -1050,7 +1050,7 @@ type
 
 function TLinkSpinEdit.IsValidChar(Key: Char): Boolean;
 begin
-  Result := inherited IsValidChar(Key) or (Key in [#13, #27]);
+  Result := inherited IsValidChar(Key) or (((Key = #13) or (Key = #27)));
 end;
 
 constructor TSpinEditLink.Create(AOwner: TPersistent);
@@ -1101,7 +1101,7 @@ end;
 
 procedure TSpinEditLink.KeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key in [#13, #27] then Key := #0; // Eliminate beep
+  if ((Key = #13) or (Key = #27)) then Key := #0; // Eliminate beep
 end;
 
 { TMemoEditLink }

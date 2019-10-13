@@ -19,6 +19,7 @@ interface
 uses
   Windows,
   SysUtils,
+  Classes,
   Controls,
   VTEditors, VirtualTrees,
   cxEdit, cxTextEdit, cxDropDownEdit,cxCheckComboBox,
@@ -173,7 +174,7 @@ end;
 
 procedure TcxComboEditLink.KeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key in [#13, #27] then Key := #0; // Eliminate beep
+  if ((Key = #13) or (Key = #27)) then Key := #0; // Eliminate beep
 end;
 
 type
@@ -302,7 +303,7 @@ end;
 
 procedure TcxCheckComboEditLink.KeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key in [#13, #27] then Key := #0; // Eliminate beep
+  if ((Key = #13) or (Key = #27)) then Key := #0; // Eliminate beep
 end;
 
 type TcxCheckComboBoxHacker = class(TcxCheckComboBox);
@@ -368,7 +369,7 @@ end;
 
 procedure TcxTextEditLink.KeyPress(Sender: TObject; var Key: Char);
 begin
-  if Key in [#13, #27] then Key := #0; // Eliminate beep
+  if ((Key = #13) or (Key = #27)) then Key := #0; // Eliminate beep
 end;
 
 procedure TcxTextEditLink.PrepareEditControl;

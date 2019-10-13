@@ -32232,7 +32232,7 @@ function TBaseVirtualTree.ScrollIntoView(Node: PVirtualNode; Center: Boolean; Ho
 
 var
   R: TRect;
-  Run: PVirtualNode;
+  {>>>Run: PVirtualNode;<<<}
   UseColumns,
   HScrollBarVisible: Boolean;
   ScrolledVertically,
