@@ -93,7 +93,7 @@ type
     procedure MouseLeave; override;
     procedure PaintScroll; override;
     function PointInTreeHeader(const P: TPoint): Boolean;
-    procedure UpdateScroll;
+    procedure UpdateScroll;{$if CompilerVersion >= 34}override;{$ifend}
   public
     constructor Create(AControl: TWinControl); override;
     destructor Destroy; override;
@@ -195,23 +195,23 @@ begin
       R.Left := HorzUpButtonRect.Right;
       R.Right := HorzDownButtonRect.Left;
       Details := StyleServices.GetElementDetails(tsUpperTrackHorzNormal);
-      StyleServices.DrawElement(B.Canvas.Handle, Details, R);
+      StyleServices.DrawElement(B.Canvas.Handle, Details, R{$IF CompilerVersion  >= 34}, nil, FVertScrollWnd.CurrentPPI{$IFEND});
 
       if FHorzScrollWnd.Enabled then
         Details := StyleServices.GetElementDetails(HorzSliderState);
-      StyleServices.DrawElement(B.Canvas.Handle, Details, HorzSliderRect);
+      StyleServices.DrawElement(B.Canvas.Handle, Details, HorzSliderRect{$IF CompilerVersion  >= 34}, nil, FVertScrollWnd.CurrentPPI{$IFEND});
 
       if FHorzScrollWnd.Enabled then
         Details := StyleServices.GetElementDetails(HorzUpState)
       else
         Details := StyleServices.GetElementDetails(tsArrowBtnLeftDisabled);
-      StyleServices.DrawElement(B.Canvas.Handle, Details, HorzUpButtonRect);
+      StyleServices.DrawElement(B.Canvas.Handle, Details, HorzUpButtonRect{$IF CompilerVersion  >= 34}, nil, FVertScrollWnd.CurrentPPI{$IFEND});
 
       if FHorzScrollWnd.Enabled then
         Details := StyleServices.GetElementDetails(HorzDownState)
       else
         Details := StyleServices.GetElementDetails(tsArrowBtnRightDisabled);
-      StyleServices.DrawElement(B.Canvas.Handle, Details, HorzDownButtonRect);
+      StyleServices.DrawElement(B.Canvas.Handle, Details, HorzDownButtonRect{$IF CompilerVersion  >= 34}, nil, FVertScrollWnd.CurrentPPI{$IFEND});
 
       R := HorzScrollRect;
       MoveWindowOrg(B.Canvas.Handle, R.Left, R.Top);
@@ -242,28 +242,28 @@ begin
 
       R.Bottom := B.Height + R.Top;
       Details := StyleServices.GetElementDetails(tsUpperTrackVertNormal);
-      StyleServices.DrawElement(B.Canvas.Handle, Details, R);
+      StyleServices.DrawElement(B.Canvas.Handle, Details, R {$IF CompilerVersion  >= 34}, nil, FVertScrollWnd.CurrentPPI{$IFEND});
 
       R.Top := VertUpButtonRect.Bottom;
       R.Bottom := VertDownButtonRect.Top;
       Details := StyleServices.GetElementDetails(tsUpperTrackVertNormal);
-      StyleServices.DrawElement(B.Canvas.Handle, Details, R);
+      StyleServices.DrawElement(B.Canvas.Handle, Details, R{$IF CompilerVersion  >= 34}, nil, FVertScrollWnd.CurrentPPI{$IFEND});
 
       if FVertScrollWnd.Enabled then
         Details := StyleServices.GetElementDetails(VertSliderState);
-      StyleServices.DrawElement(B.Canvas.Handle, Details, VertSliderRect);
+      StyleServices.DrawElement(B.Canvas.Handle, Details, VertSliderRect{$IF CompilerVersion  >= 34}, nil, FVertScrollWnd.CurrentPPI{$IFEND});
 
       if FVertScrollWnd.Enabled then
         Details := StyleServices.GetElementDetails(VertUpState)
       else
         Details := StyleServices.GetElementDetails(tsArrowBtnUpDisabled);
-      StyleServices.DrawElement(B.Canvas.Handle, Details, VertUpButtonRect);
+      StyleServices.DrawElement(B.Canvas.Handle, Details, VertUpButtonRect{$IF CompilerVersion  >= 34}, nil, FVertScrollWnd.CurrentPPI{$IFEND});
 
       if FVertScrollWnd.Enabled then
         Details := StyleServices.GetElementDetails(VertDownState)
       else
         Details := StyleServices.GetElementDetails(tsArrowBtnDownDisabled);
-      StyleServices.DrawElement(B.Canvas.Handle, Details, VertDownButtonRect);
+      StyleServices.DrawElement(B.Canvas.Handle, Details, VertDownButtonRect{$IF CompilerVersion  >= 34}, nil, FVertScrollWnd.CurrentPPI{$IFEND});
 
       R := VertScrollRect;
       MoveWindowOrg(B.Canvas.Handle, R.Left, R.Top);

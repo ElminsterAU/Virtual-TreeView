@@ -5,7 +5,7 @@ Virtual Treeview is a Delphi treeview control built from ground up. Many years o
 I don't use C++ Builder and my experience with it is very limited. This makes it difficult to take care about bugs that are reported in C++ Builder and to maintain the C++ Builder packages. I would be great if someone would volunteer to do this. Please contact me at joachim.marder+CPP@gmail.com.
 
 ### Downloads
-**V7.3** official release for **RAD Studio XE3 to 10.3 Rio**: [JAM Software](https://www.jam-software.com/virtual-treeview/VirtualTreeView.zip) ([Changes](https://github.com/Virtual-TreeView/Virtual-TreeView/milestone/12?closed=1))
+**V7.4** official release for **RAD Studio XE3 to 10.4 Rio**: [JAM Software](https://www.jam-software.com/virtual-treeview/VirtualTreeView.zip) ([Changes](https://github.com/Virtual-TreeView/Virtual-TreeView/milestone/16?closed=1))
 
 An experimental **FireMonkey** port can be found here: [livius2/Virtual-TreeView](https://github.com/livius2/Virtual-TreeView)
 
@@ -27,7 +27,9 @@ For installation instruction see the "INSTALL.TXT" file in the ZIP. [Delphinus](
 Please do not contact developers or JAM Software for technical support. Please try to get support from the community e.g. at [Stack Overflow](http://stackoverflow.com/search?q=%22virtual+treeview%22), [Delphi Pages](http://www.delphipages.com/), [Delphi Praxis](http://www.delphipraxis.net/141465-virtual-treeview-tutorials-mit-beispielen.html) or [Embarcadero forums](https://forums.embarcadero.com/). Please do not use the issue tracker for getting support, only for reporting true bugs (see below).
 
 ### Reporting Bugs
-First of all, please make sure you are using the **latest official version**. When **[reporting a bug](https://github.com/Virtual-TreeView/Virtual-TreeView/issues)** please include a **sample** project that allows us to quickly reproduce the bug. This can also be one of the demo projects that come with Virtual Treeview, modified to show the bug. If only small changes are required, a description is sufficient how a demo projects needs to be changed in order to replicate the bug. If you already have a solution, please supply a patch file or make a pull request. If you used a previous version that did not have the bug, please include this version number in your report.
+First of all, please make sure you are using the **latest official version**. When **[reporting a bug](https://github.com/Virtual-TreeView/Virtual-TreeView/issues)** please attach a **sample** project as ZIP-file that allows us to quickly reproduce the bug. This can also be one of the demo projects that come with Virtual Treeview, modified to show the bug. If only small changes are required, a description is sufficient how a demo projects needs to be changed in order to replicate the bug. Please follow [best practices for good bug reports](https://www.softwaretestinghelp.com/how-to-write-good-bug-report/). 
+
+If you already have a solution, please supply a patch file or make a pull request. If you used a previous version that did not have the bug, please include this version number in your report.
 
 ### Feature Requests
 We currently focus on reducing the number of reported bugs and getting Virtual Treeview stable. Feature Requests will most likely not processed at the moment. We are only going to process enhancement requests if the new feature is of general interest and a source code patch based on the latest SVN revision is attached to the report. Please mark feature requests with the flag "Enhancement".
