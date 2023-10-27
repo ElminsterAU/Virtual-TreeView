@@ -187,6 +187,8 @@ begin
     if Assigned(celProperties) then
       Properties := celProperties;
     OnKeyPress := KeyPress;
+    Properties.PopupSizeable := True;
+    Properties.PopupAutoSize := False;
   end;
   with TcxComboBoxHacker(EditControl) do begin
     LookAndFeel.ScrollbarMode := sbmClassic;
@@ -206,8 +208,12 @@ end;
 { TcxCustomTextEditLink }
 
 procedure TcxCustomTextEditLink.AfterBeginEdit;
+var
+  lEditData: TcxCustomEditData;
 begin
   inherited;
+  lEditData := nil;
+  TcxCustomTextEditHacker(EditControl).Activate(lEditData, False);
   ShowCaret(TcxCustomTextEditHacker(EditControl).InnerTextEdit.Control.Handle);
 end;
 
