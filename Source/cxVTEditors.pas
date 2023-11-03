@@ -125,13 +125,18 @@ type
   TcxCustomEditHacker = class(TcxCustomEdit);
   TcxCustomTextEditHacker = class(TcxCustomTextEdit);
 
+  TcxComboBoxForLink = class(TcxComboBox)
+  protected
+    function GetScrollLookupDataList(AScrollCause: TcxEditScrollCause): Boolean; override;
+  end;
+
 { TcxComboEditLink }
 
 procedure TcxComboEditLink.AfterBeginEdit;
 begin
   inherited;
-  TcxComboBox(EditControl).SelectAll;
-  TcxComboBox(EditControl).Repaint;
+  TcxComboBoxForLink(EditControl).SelectAll;
+  TcxComboBoxForLink(EditControl).Repaint;
 end;
 
 function TcxComboEditLink.celGetProperties: TcxComboBoxProperties;
@@ -153,7 +158,7 @@ end;
 
 function TcxComboEditLink.CreateEditControl: TWinControl;
 begin
-  Result := TcxComboBox.Create(nil, True);
+  Result := TcxComboBoxForLink.Create(nil, True);
 end;
 
 destructor TcxComboEditLink.Destroy;
@@ -164,7 +169,7 @@ end;
 
 function TcxComboEditLink.GetEditText: WideString;
 begin
-  Result := TcxComboBox(EditControl).Text;
+  Result := TcxComboBoxForLink(EditControl).Text;
 end;
 
 function TcxComboEditLink.IsMultiLine: Boolean;
@@ -177,20 +182,16 @@ begin
   if ((Key = #13) or (Key = #27)) then Key := #0; // Eliminate beep
 end;
 
-type
-  TcxComboBoxHacker = class(TcxComboBox);
-
 procedure TcxComboEditLink.PrepareEditControl;
 begin
   inherited;
-  with TcxComboBox(EditControl) do begin
+  with TcxComboBoxForLink(EditControl) do begin
     if Assigned(celProperties) then
       Properties := celProperties;
-    OnKeyPress := KeyPress;
+    OnKeyPress := Self.KeyPress;
     Properties.PopupSizeable := True;
     Properties.PopupAutoSize := False;
-  end;
-  with TcxComboBoxHacker(EditControl) do begin
+
     LookAndFeel.ScrollbarMode := sbmClassic;
     LookAndFeel.TouchScrollUIMode := tsmDisabled;
     PopupControlsLookAndFeel.ScrollbarMode := sbmClassic;
@@ -202,7 +203,7 @@ end;
 
 procedure TcxComboEditLink.SetEditText(const Value: WideString);
 begin
-  TcxComboBox(EditControl).Text := Value;
+  TcxComboBoxForLink(EditControl).Text := Value;
 end;
 
 { TcxCustomTextEditLink }
@@ -405,6 +406,14 @@ begin
   if not Assigned(telProperties) then
     telProperties := TcxTextEditProperties.Create(Self);
   telGetProperties.Assign(Value);
+end;
+
+{ TcxComboBoxForLink }
+
+function TcxComboBoxForLink.GetScrollLookupDataList(AScrollCause: TcxEditScrollCause): Boolean;
+begin
+  Result := not PropertiesChangeLocked and (not IsInplace or
+    (AScrollCause in [escMouseWheel, escKeyboard]) or not InplaceParams.MultiRowParent or HasPopupWindow);
 end;
 
 end.
