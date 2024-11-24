@@ -617,7 +617,7 @@ type
 
   PVirtualNode = ^TVirtualNode;
 
-  TColumnIndex = type Integer;
+  TColumnIndex = type NativeInt;
   TColumnPosition = type Cardinal;
 
   // This record must already be defined here and not later because otherwise BCB users will not be able
@@ -2587,12 +2587,12 @@ type
     procedure WMThemeChanged(var Message: TMessage); message WM_THEMECHANGED;
     procedure WMVScroll(var Message: TWMVScroll); message WM_VSCROLL;
     function GetRangeX: Cardinal;
-    function GetDoubleBuffered: Boolean;
     procedure SetDoubleBuffered(const Value: Boolean);
     function GetVclStyleEnabled: Boolean; inline;
 
   protected
     FFontChanged: Boolean;                       // flag for keeping informed about font changes in the off screen buffer   // [IPK] - private to protected
+    function GetDoubleBuffered: Boolean; {$if CompilerVersion >= 36}override;{$ifend}
     procedure AutoScale(isDpiChange: Boolean); virtual;
     procedure AddToSelection(Node: PVirtualNode; NotifySynced: Boolean); overload; virtual;
     procedure AddToSelection(const NewItems: TNodeArray; NewLength: Integer; ForceInsert: Boolean = False); overload; virtual;
