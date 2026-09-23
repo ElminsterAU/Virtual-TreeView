@@ -1,4 +1,4 @@
-unit GeneralAbilitiesDemo;
+﻿unit GeneralAbilitiesDemo;
 
 // Virtual Treeview sample form demonstrating following features:
 //   - General use and feel of TVirtualStringTree.
@@ -25,9 +25,12 @@ interface
 {$ifend}
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, Buttons, VirtualTrees, ComCtrls, ExtCtrls, ImgList, Menus,
-  StdActns, ActnList, VirtualTrees.HeaderPopup, UITypes;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Buttons, VirtualTrees,
+  Vcl.ComCtrls, Vcl.ExtCtrls, Vcl.ImgList, Vcl.Menus, Vcl.StdActns, Vcl.ActnList,
+  VirtualTrees.HeaderPopup, System.UITypes, System.ImageList,
+  VirtualTrees.BaseTree, VirtualTrees.Types, VirtualTrees.BaseAncestorVCL,
+  VirtualTrees.AncestorVCL;
 
 type
   TGeneralForm = class(TForm)
@@ -258,7 +261,7 @@ begin
       4:
         begin
           ForeignText := WideChar($20AC);
-          ForeignText := 'nichts ist unm�glich ' + ForeignText;
+          ForeignText := 'nichts ist unmöglich ' + ForeignText;
         end;
       5:
         begin
@@ -367,15 +370,11 @@ procedure TGeneralForm.VST2GetPopupMenu(Sender: TBaseVirtualTree; Node: PVirtual
   const P: TPoint; var AskParent: Boolean; var PopupMenu: TPopupMenu);
 
 begin
-  case Column of
-    0:
-      PopupMenu := PopupMenu1
-  else
-    PopupMenu := nil;
-  end;                       
+  if Column <= 0 then
+    PopupMenu := PopupMenu1;
 end;
 
-//----------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------;
 
 procedure TGeneralForm.VST2KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 
@@ -406,12 +405,12 @@ begin
   with Sender as TRadioGroup do
     if ItemIndex = 0 then
     begin
-      VST2.TreeOptions.PaintOptions := VST2.TreeOptions.PaintOptions + [toShowTreeLines];
+      VST2.TreeOptions.PaintOptions := VST2.TreeOptions.PaintOptions + [TVTPaintOption.toShowTreeLines];
       VST2.ButtonStyle := bsRectangle;
     end
     else
     begin
-      VST2.TreeOptions.PaintOptions := VST2.TreeOptions.PaintOptions - [toShowTreeLines];
+      VST2.TreeOptions.PaintOptions := VST2.TreeOptions.PaintOptions - [TVTPaintOption.toShowTreeLines];
       VST2.ButtonStyle := bsTriangle;
     end;
 end;
@@ -449,11 +448,11 @@ begin
   with VST2.TreeOptions do
     if ThemeRadioGroup.ItemIndex = 0 then
     begin
-      PaintOptions := PaintOptions + [toThemeAware];
+      PaintOptions := PaintOptions + [TVTPaintOption.toThemeAware];
       VST2.CheckImageKind := ckSystemDefault;
     end
     else
-      PaintOptions := PaintOptions - [toThemeAware];
+      PaintOptions := PaintOptions - [TVTPaintOption.toThemeAware];
 
   RadioGroup1.Enabled := ThemeRadioGroup.ItemIndex = 1;
   RadioGroup2.Enabled := ThemeRadioGroup.ItemIndex = 1;

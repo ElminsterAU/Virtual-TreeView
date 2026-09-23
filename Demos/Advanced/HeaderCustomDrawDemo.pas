@@ -1,4 +1,4 @@
-unit HeaderCustomDrawDemo;
+﻿unit HeaderCustomDrawDemo;
 
 // Virtual Treeview sample form demonstrating following features:
 //   - Advanced header custom draw.
@@ -7,8 +7,11 @@ unit HeaderCustomDrawDemo;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, ImgList, VirtualTrees, StdCtrls, ExtCtrls;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
+  System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
+  Vcl.ImgList, VirtualTrees, Vcl.StdCtrls, Vcl.ExtCtrls, VirtualTrees.BaseTree,
+  System.ImageList, VirtualTrees.Types, VirtualTrees.BaseAncestorVCL,
+  VirtualTrees.AncestorVCL;
 
 type
   THeaderOwnerDrawForm = class(TForm)
@@ -24,9 +27,9 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure AnimationTimerTimer(Sender: TObject);
     procedure HeaderCustomDrawTreeHeaderMouseUp(Sender: TVTHeader; Button: TMouseButton; Shift: TShiftState; X,
-      Y: Integer);
+      Y: TDimension);
     procedure HeaderCustomDrawTreeHeaderMouseDown(Sender: TVTHeader; Button: TMouseButton; Shift: TShiftState; X,
-      Y: Integer);
+      Y: TDimension);
     procedure HeaderCustomDrawTreeStateChange(Sender: TBaseVirtualTree; Enter, Leave: TVirtualTreeStates);
     procedure HeaderCustomDrawTreeGetText(Sender: TBaseVirtualTree;
       Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
@@ -95,7 +98,7 @@ var
   Size: TSize;
   SourceRect,
   TargetRect: TRect;
-
+  OldFont: TFont;
 begin
   with PaintInfo do
   begin
@@ -141,15 +144,25 @@ begin
               end;
             if hpeText in Elements then
             begin
-              TargetCanvas.Font.Name := 'Webdings';
-              TargetCanvas.Font.Charset := SYMBOL_CHARSET;
-              TargetCanvas.Font.Size := 60;
-              if IsHoverIndex then
-                TargetCanvas.Font.Color := $80FF;
-              S := '�';
-              Size := TargetCanvas.TextExtent(S);
-              SetBkMode(TargetCanvas.Handle, TRANSPARENT);
-              TargetCanvas.TextOut(PaintRectangle.Left + 10, Paintrectangle.Bottom - Size.cy, S);
+              // store current font
+              OldFont := TFont.Create();
+              try
+                OldFont.Assign(TargetCanvas.Font);
+                // draw world map
+                TargetCanvas.Font.Name := 'Webdings';
+                TargetCanvas.Font.Charset := SYMBOL_CHARSET;
+                TargetCanvas.Font.Size := 60;
+                if IsHoverIndex then
+                  TargetCanvas.Font.Color := $80FF;
+                S := 'û';
+                Size := TargetCanvas.TextExtent(S);
+                SetBkMode(TargetCanvas.Handle, TRANSPARENT);
+                TargetCanvas.TextOut(PaintRectangle.Left + 10, Paintrectangle.Bottom - Size.cy, S);
+                // restore previous font
+                TargetCanvas.Font.Assign(OldFont);
+              finally
+                OldFont.Free();
+              end;
             end;
             // Other elements go here.
           end;
@@ -266,7 +279,7 @@ end;
 //----------------------------------------------------------------------------------------------------------------------
 
 procedure THeaderOwnerDrawForm.HeaderCustomDrawTreeHeaderMouseUp(Sender: TVTHeader; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
+  Shift: TShiftState; X, Y: TDimension);
 
 begin
   // Reenable animation after a drag operation.
@@ -276,7 +289,7 @@ end;
 //----------------------------------------------------------------------------------------------------------------------
 
 procedure THeaderOwnerDrawForm.HeaderCustomDrawTreeHeaderMouseDown(Sender: TVTHeader; Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
+  Shift: TShiftState; X, Y: TDimension);
 
 begin
   // Stop animation when mouse button is down.

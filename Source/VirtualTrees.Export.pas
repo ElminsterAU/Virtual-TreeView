@@ -7,6 +7,7 @@
 interface
 
 uses Winapi.Windows,
+     System.NetEncoding,
      VirtualTrees,
      VirtualTrees.Classes;
 
@@ -19,14 +20,18 @@ procedure ContentToCustom(Tree: TCustomVirtualStringTree; Source: TVSTTextSource
 implementation
 
 uses
-  Vcl.Graphics,
-  Vcl.Controls,
-  Vcl.Forms,
   System.Classes,
   System.SysUtils,
   System.StrUtils,
   System.Generics.Collections,
-  System.UITypes;
+  System.UITypes,
+  Vcl.Graphics,
+  Vcl.Controls,
+  Vcl.Forms,
+  VirtualTrees.Types,
+  VirtualTrees.ClipBoard,
+  VirtualTrees.Header,
+  VirtualTrees.BaseTree;
 
 type
   TCustomVirtualStringTreeCracker = class(TCustomVirtualStringTree)
@@ -42,7 +47,7 @@ function ContentToHTML(Tree: TCustomVirtualStringTree; Source: TVSTTextSourceTyp
 
 // Renders the current tree content (depending on Source) as HTML text encoded in UTF-8.
 // If Caption is not empty then it is used to create and fill the header for the table built here.
-// Based on ideas and code from Frank van den Bergh and Andreas H�rstemeier.
+// Based on ideas and code from Frank van den Bergh and Andreas Hörstemeier.
 
 var
   Buffer: TBufferedString;
@@ -67,15 +72,15 @@ var
 
       Value := 48 + (Component shr 4);
       if Value > $39 then
-        Inc(Value, 7);
+        System.Inc(Value, 7);
       Buffer.Add(AnsiChar(Value));
-      Inc(I);
+      System.Inc(I);
 
       Value := 48 + (Component and $F);
       if Value > $39 then
-        Inc(Value, 7);
+        System.Inc(Value, 7);
       Buffer.Add(AnsiChar(Value));
-      Inc(I);
+      System.Inc(I);
 
       WinColor := WinColor shr 8;
     end;
@@ -104,9 +109,9 @@ var
     else
       Buffer.Add(Format('font-size: %dpt; ', [Font.Size]));
 
-    Buffer.Add(Format('font-style: %s; ', [IfThen(fsItalic in Font.Style, 'italic', 'normal')]));
-    Buffer.Add(Format('font-weight: %s; ', [IfThen(fsBold in Font.Style, 'bold', 'normal')]));
-    Buffer.Add(Format('text-decoration: %s; ', [IfThen(fsUnderline in Font.Style, 'underline', 'none')]));
+    Buffer.Add(Format('font-style: %s; ', [IfThen(TFontStyle.fsItalic in Font.Style, 'italic', 'normal')]));
+    Buffer.Add(Format('font-weight: %s; ', [IfThen(TFontStyle.fsBold in Font.Style, 'bold', 'normal')]));
+    Buffer.Add(Format('text-decoration: %s; ', [IfThen(TFontStyle.fsUnderline in Font.Style, 'underline', 'none')]));
 
     Buffer.Add('color: ');
     WriteColorAsHex(Font.Color);
@@ -132,12 +137,14 @@ var
   Index: Integer;
   IndentWidth,
   LineStyleText: String;
+  CellText: String;
   Alignment: TAlignment;
   BidiMode: TBidiMode;
 
   CellPadding: String;
   CrackTree: TCustomVirtualStringTreeCracker;
   lGetCellTextEventArgs: TVSTGetCellTextEventArgs;
+  MulticellSelected: Boolean; // multicell support
 begin
   CrackTree := TCustomVirtualStringTreeCracker(Tree);
 
@@ -155,7 +162,7 @@ begin
     // Add title if adviced so by giving a caption.
     if Length(Caption) > 0 then
       AddHeader := AddHeader + 'caption="' + Caption + '"';
-    if CrackTree.Borderstyle <> bsNone then
+    if CrackTree.Borderstyle <> TFormBorderStyle.bsNone then
       AddHeader := AddHeader + Format(' border="%d" frame=box', [CrackTree.BorderWidth + 1]);
 
     Buffer.Add('<META http-equiv="Content-Type" content="text/html; charset=utf-8">');
@@ -217,11 +224,16 @@ begin
     Columns := nil;
     ColumnColors := nil;
     RenderColumns := CrackTree.Header.UseColumns;
-    if RenderColumns then
+    // begin multicell
+    MulticellSelected := CrackTree.Header.Columns.HasMulticellSelection;
+    if RenderColumns or MulticellSelected then
     begin
       Columns := CrackTree.Header.Columns.GetVisibleColumns;
+      if CrackTree.GetSelectedCellCount > 0 then
+        Columns := CrackTree.Header.Columns.GetSelectedCellColumns;
       SetLength(ColumnColors, Length(Columns));
     end;
+    // end multicell support
 
     CrackTree.GetRenderStartValues(Source, Run, GetNextNode);
     Save := Run;
@@ -426,7 +438,8 @@ begin
           lGetCellTextEventArgs.Node := Run;
           lGetCellTextEventArgs.Column := Index;
           CrackTree.DoGetText(lGetCellTextEventArgs);
-          Buffer.Add(lGetCellTextEventArgs.CellText);
+          CellText := THtmlEncoding.HTML.Encode(lGetCellTextEventArgs.CellText);
+          Buffer.Add(CellText);
           if not lGetCellTextEventArgs.StaticText.IsEmpty and (toShowStaticText in TStringTreeOptions(CrackTree.TreeOptions).StringOptions) then
             Buffer.Add(' ' + lGetCellTextEventArgs.StaticText);
           Buffer.Add('</td>');
@@ -434,7 +447,7 @@ begin
 
         if not RenderColumns then
           Break;
-        Inc(I);
+        System.Inc(I);
       end;
       if Assigned(CrackTree.OnAfterNodeExport) then
         CrackTree.OnAfterNodeExport(CrackTree, etHTML, Run);
@@ -535,13 +548,13 @@ var
   begin
     if Length(Text) > 0 then
     begin
-      UseUnderline := fsUnderline in Font.Style;
+      UseUnderline := TFontStyle.fsUnderline in Font.Style;
       if UseUnderline then
         Buffer.Add('\ul');
-      UseItalic := fsItalic in Font.Style;
+      UseItalic := TFontStyle.fsItalic in Font.Style;
       if UseItalic then
         Buffer.Add('\i');
-      UseBold := fsBold in Font.Style;
+      UseBold := TFontStyle.fsBold in Font.Style;
       if UseBold then
         Buffer.Add('\b');
       SelectFont(Font.Name);
@@ -595,6 +608,7 @@ var
   LocaleBuffer: array [0..1] of Char;
   CrackTree: TCustomVirtualStringTreeCracker;
   lGetCellTextEventArgs: TVSTGetCellTextEventArgs;
+  MulticellSelected: Boolean; // multicell support
 begin
   CrackTree := TCustomVirtualStringTreeCracker(Tree);
 
@@ -616,8 +630,15 @@ begin
     LastLevel := 0;
 
     RenderColumns := CrackTree.Header.UseColumns;
-    if RenderColumns then
+    // begin multicell
+    MulticellSelected := CrackTree.Header.Columns.HasMulticellSelection;
+    if RenderColumns or MulticellSelected then
+    begin
       Columns := CrackTree.Header.Columns.GetVisibleColumns;
+      if CrackTree.GetSelectedCellCount > 0 then
+        Columns := CrackTree.Header.Columns.GetSelectedCellColumns;
+    end;
+    // end multicell support
 
     CrackTree.GetRenderStartValues(Source, Run, GetNextNode);
     Save := Run;
@@ -630,7 +651,7 @@ begin
     begin
       for I := 0 to High(Columns) do
       begin
-        Inc(J, Columns[I].Width);
+        System.Inc(J, Columns[I].Width);
         // This value must be expressed in twips (1 inch = 1440 twips).
         Twips := Round(1440 * J / Screen.PixelsPerInch);
         Buffer.Add('\cellx');
@@ -725,7 +746,7 @@ begin
           end;
 
           // Call back the application to know about font customization.
-          CrackTree.Canvas.Font := CrackTree.Font;
+          CrackTree.Canvas.Font.Assign(CrackTree.Font);
           CrackTree.FFontChanged := False;
           CrackTree.DoPaintText(Run, CrackTree.Canvas, Index, ttNormal);
 
@@ -764,7 +785,7 @@ begin
 
         if not RenderColumns then
           Break;
-        Inc(I);
+        System.Inc(I);
       end;
       Buffer.Add('\row');
       Buffer.AddNewLine;
@@ -835,6 +856,7 @@ var
   I: Integer;
   CrackTree: TCustomVirtualStringTreeCracker;
   lGetCellTextEventArgs: TVSTGetCellTextEventArgs;
+  MulticellSelected: Boolean;
 begin
   CrackTree := TCustomVirtualStringTreeCracker(Tree);
 
@@ -844,8 +866,19 @@ begin
   try
     Columns := nil;
     RenderColumns := CrackTree.Header.UseColumns;
-    if RenderColumns then
+    MulticellSelected := CrackTree.Header.Columns.HasMulticellSelection;
+
+    // begin multicell
+    if RenderColumns or MulticellSelected then
+    begin
       Columns := CrackTree.Header.Columns.GetVisibleColumns;
+      // multicell support
+      if CrackTree.GetSelectedCellCount > 0 then
+      begin
+        Columns := CrackTree.Header.Columns.GetSelectedCellColumns;
+      end;
+    end;
+    // end multicell support
 
     CrackTree.GetRenderStartValues(Source, Run, GetNextNode);
     Save := Run;

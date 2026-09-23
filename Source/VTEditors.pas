@@ -17,7 +17,8 @@ uses
   ExtCtrls,
   ComCtrls,
   Spin,
-  VirtualTrees;
+  VirtualTrees,
+  VirtualTrees.Types;
 
 type
   TCustomEditLinkClass = class of TCustomEditLink;

@@ -4,7 +4,7 @@ program Tests;
 {$APPTYPE CONSOLE}
 {$ENDIF}{$STRONGLINKTYPES ON}
 uses
-  SysUtils,
+  System.SysUtils,
   {$IFDEF TESTINSIGHT}
   TestInsight.DUnitX,
   {$ENDIF }
@@ -12,7 +12,24 @@ uses
   DUnitX.Loggers.Xml.NUnit,
   DUnitX.TestFramework,
   VirtualTreeTests in 'VirtualTreeTests.pas',
-  VirtualStringTreeTests in 'VirtualStringTreeTests.pas';
+  VirtualStringTreeTests in 'VirtualStringTreeTests.pas',
+  VTWorkerThreadIssue1001Tests in 'VTWorkerThreadIssue1001Tests.pas',
+  VTOnEditCancelledTests in 'VTOnEditCancelledTests.pas',
+  VTOnDrawTextTests in 'VTOnDrawTextTests.pas',
+  VTFocusChangedIssue1379Tests in 'VTFocusChangedIssue1379Tests.pas',
+  VTHeaderHintIssue728Tests in 'VTHeaderHintIssue728Tests.pas',
+  VTFocusRectIssue765Tests in 'VTFocusRectIssue765Tests.pas',
+  VTPaintTreeIssue1074Tests in 'VTPaintTreeIssue1074Tests.pas',
+  VTBandsIssue1091Tests in 'VTBandsIssue1091Tests.pas',
+  VTFixedColumnDragIssue1377Tests in 'VTFixedColumnDragIssue1377Tests.pas',
+  VTScrollRangeIssue983Tests in 'VTScrollRangeIssue983Tests.pas',
+  VTHeaderBackgroundTests in 'VTHeaderBackgroundTests.pas',
+  VTCellSelectionTests in 'VTCellSelectionTests.pas',
+  VTSelectedCountIssue1197Tests in 'VTSelectedCountIssue1197Tests.pas',
+  VTPaintToIssue632Tests in 'VTPaintToIssue632Tests.pas',
+  VirtualTrees.MouseUtils in 'VirtualTrees.MouseUtils.pas',
+  VTCellSelectionTests.VisibilityForm in 'VTCellSelectionTests.VisibilityForm.pas' {VisibilityForm},
+  VTCellSelectionTests.VTSelectionTestForm in 'VTCellSelectionTests.VTSelectionTestForm.pas' {SelectionTestForm};
 
 var
   runner : ITestRunner;
@@ -25,6 +42,7 @@ begin
   exit;
 {$ENDIF}
   try
+    TDUnitX.Options.ExitBehavior := TDUnitXExitBehavior.Pause;
     //Check command line options, will exit if invalid
     TDUnitX.CheckCommandLine;
     //Create the test runner

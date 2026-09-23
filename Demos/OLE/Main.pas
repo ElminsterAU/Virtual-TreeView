@@ -1,15 +1,17 @@
 unit Main;
- 
+
 // Virtual Treeview sample application demonstrating clipboard and drag'n drop operations.
 // The treeview uses OLE for these operations but can also issue and accept VCL drag'n drop.
 // Written by Mike Lischke.
 
 interface
 
-uses 
-  Windows, Messages, ActiveX, SysUtils, Forms, Dialogs, Graphics, 
-  VirtualTrees, ActnList, ComCtrls, ExtCtrls, StdCtrls, Controls, Classes,
-  ImgList, System.Actions;
+uses
+  Winapi.Windows, Winapi.Messages, Winapi.ActiveX, System.SysUtils, Vcl.Forms,
+  Vcl.Dialogs, Vcl.Graphics, VirtualTrees, Vcl.ActnList, Vcl.ComCtrls,
+  Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Controls, System.Classes, Vcl.ImgList,
+  System.Actions, System.ImageList, VirtualTrees.BaseAncestorVCL,
+  VirtualTrees.BaseTree, VirtualTrees.AncestorVCL, VirtualTrees.Types;
 
 type
   TMainForm = class(TForm)
@@ -49,11 +51,12 @@ type
     procedure Tree1GetText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
       var CellText: string);
     procedure FormCreate(Sender: TObject);
-    procedure TreeDragDrop(Sender: TBaseVirtualTree; Source: TObject; DataObject: IDataObject;
+    procedure TreeDragDrop(Sender: TBaseVirtualTree; Source: TObject; DataObject: TVTDragDataObject;
       Formats: TFormatArray; Shift: TShiftState; Pt: TPoint; var Effect: Integer; Mode: TDropMode);
     procedure Button2Click(Sender: TObject);
     procedure TreeInitNode(Sender: TBaseVirtualTree; ParentNode, Node: PVirtualNode;
       var InitialStates: TVirtualNodeInitStates);
+    procedure TreeFreeNode(Sender: TBaseVirtualTree; Node: PVirtualNode);
     procedure Tree1NewText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; NewText: string);
     procedure Button3Click(Sender: TObject);
     procedure Tree2DragAllowed(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean);
@@ -208,6 +211,7 @@ begin
   Tree2.NodeDataSize := SizeOf(TNodeData);
   Tree2.RootNodeCount := 30;
 
+  ReportMemoryLeaksOnShutdown := True;
   // There is a small RTF text stored in the resource to have something to display in the rich edit control.
   Stream := TResourceStream.Create(HInstance, 'RTF', 'RCDATA');
   try
@@ -264,7 +268,7 @@ begin
           TargetNode := Target.DropTargetNode;
           if TargetNode = nil then
             TargetNode := Target.FocusedNode;
-            
+
           Head := OLEData;
           try
             while Head^ <> #0 do
@@ -374,7 +378,7 @@ end;
 
 //----------------------------------------------------------------------------------------------------------------------
 
-procedure TMainForm.TreeDragDrop(Sender: TBaseVirtualTree; Source: TObject; DataObject: IDataObject;
+procedure TMainForm.TreeDragDrop(Sender: TBaseVirtualTree; Source: TObject; DataObject: TVTDragDataObject;
   Formats: TFormatArray; Shift: TShiftState; Pt: TPoint; var Effect: Integer; Mode: TDropMode);
 
   //--------------- local function --------------------------------------------
@@ -535,6 +539,17 @@ begin
 end;
 
 //----------------------------------------------------------------------------------------------------------------------
+procedure TMainForm.TreeFreeNode(Sender: TBaseVirtualTree; Node: PVirtualNode);
+
+var
+  Data: PNodeData;
+
+begin
+  Data := Sender.GetNodeData(Node);
+  Data.Caption := ''; // Removes the caption, otherwise, memory leak.
+end;
+
+//----------------------------------------------------------------------------------------------------------------------
 
 procedure TMainForm.Tree1NewText(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; NewText: string);
 
@@ -572,7 +587,7 @@ end;
 procedure TMainForm.Tree2DragAllowed(Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex; var Allowed: Boolean);
 
 // Tree 2 uses manual drag start to tell which node might be dragged.
- 
+
 begin
   Allowed := Odd(Node.Index);
 end;

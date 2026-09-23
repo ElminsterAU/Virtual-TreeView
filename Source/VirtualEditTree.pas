@@ -17,8 +17,8 @@ unit VirtualEditTree;
 interface
 
 uses
-  SysUtils, Windows, Messages, Classes, Controls, ActiveX, VirtualTrees, VTEditors,
-  StdCtrls, ComCtrls;
+  SysUtils, Windows, Messages, Classes, Controls, ActiveX, VirtualTrees, VirtualTrees.Types,
+  VirtualTrees.Header, VirtualTrees.EditLink, VTEditors, StdCtrls, ComCtrls;
 
 type
   TVirtualEditableColumn = class;

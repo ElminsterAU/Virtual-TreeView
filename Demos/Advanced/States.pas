@@ -3,8 +3,9 @@ unit States;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, VirtualTrees;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
+  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls,
+  VirtualTrees, VirtualTrees.BaseTree;
 
 type
   TStateForm = class(TForm)
@@ -21,7 +22,6 @@ type
     CheckBox21: TCheckBox;
     CheckBox27: TCheckBox;
     CheckBox43: TCheckBox;
-    CheckBox44: TCheckBox;
     GroupBox3: TGroupBox;
     CheckBox10: TCheckBox;
     CheckBox11: TCheckBox;
@@ -76,6 +76,9 @@ implementation
 
 {$R *.dfm}
 
+uses
+  VirtualTrees.Types;
+
 //----------------------------------------------------------------------------------------------------------------------
 
 procedure UpdateStateDisplay(CurrentStates, Enter, Leave: TVirtualTreeStates);
@@ -120,7 +123,6 @@ begin
       SetActiveState(CheckBox32, tsStructureChangePending in NewStates);
       SetActiveState(CheckBox33, tsSynchMode in NewStates);
       SetActiveState(CheckBox34, tsThumbTracking in NewStates);
-      SetActiveState(CheckBox35, tsUpdating in NewStates);
       SetActiveState(CheckBox36, tsUseCache in NewStates);
       SetActiveState(CheckBox37, tsUserDragObject in NewStates);
       SetActiveState(CheckBox38, tsUseThemes in NewStates);
@@ -128,8 +130,7 @@ begin
       SetActiveState(CheckBox40, tsValidationNeeded in NewStates);
       SetActiveState(CheckBox41, tsVCLDragging in NewStates);
       SetActiveState(CheckBox42, tsVCLDragPending in NewStates);
-      SetActiveState(CheckBox43, tsWheelPanning in NewStates);
-      SetActiveState(CheckBox44, tsWheelScrolling in NewStates);
+      SetActiveState(CheckBox43, tsPanning in NewStates);
       SetActiveState(CheckBox45, tsWindowCreating in NewStates);
       SetActiveState(CheckBox46, tsPopupMenuShown in NewStates);
 
@@ -182,7 +183,6 @@ begin
   CheckBox41.Enabled := EnableCheckBox.Checked;
   CheckBox42.Enabled := EnableCheckBox.Checked;
   CheckBox43.Enabled := EnableCheckBox.Checked;
-  CheckBox44.Enabled := EnableCheckBox.Checked;
   CheckBox45.Enabled := EnableCheckBox.Checked;
   CheckBox46.Enabled := EnableCheckBox.Checked;
 end;

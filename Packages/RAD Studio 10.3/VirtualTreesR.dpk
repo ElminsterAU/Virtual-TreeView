@@ -9,21 +9,21 @@ package VirtualTreesR;
 {$EXTENDEDSYNTAX ON}
 {$IMPORTEDDATA ON}
 {$IOCHECKS ON}
-{$LOCALSYMBOLS ON}
+{$LOCALSYMBOLS OFF}
 {$LONGSTRINGS ON}
 {$OPENSTRINGS ON}
-{$OPTIMIZATION OFF}
+{$OPTIMIZATION ON}
 {$OVERFLOWCHECKS OFF}
 {$RANGECHECKS OFF}
-{$REFERENCEINFO ON}
+{$REFERENCEINFO OFF}
 {$SAFEDIVIDE OFF}
-{$STACKFRAMES ON}
+{$STACKFRAMES OFF}
 {$TYPEDADDRESS OFF}
 {$VARSTRINGCHECKS ON}
 {$WRITEABLECONST OFF}
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
-{$DEFINE DEBUG}
+{$DEFINE RELEASE}
 {$ENDIF IMPLICITBUILDING}
 {$LIBSUFFIX '26'}
 {$RUNONLY}
@@ -31,13 +31,7 @@ package VirtualTreesR;
 
 requires
   vcl,
-  vclx,
-  vclimg,
-  dbrtl,
-  VclSmp,
-  Jcl,
-  JvCore,
-  JvStdCtrls;
+  vclx;
 
 contains
   VirtualTrees in '..\..\Source\VirtualTrees.pas',
@@ -51,8 +45,16 @@ contains
   VirtualTrees.Actions in '..\..\Source\VirtualTrees.Actions.pas',
   VirtualTrees.Export in '..\..\Source\VirtualTrees.Export.pas',
   VirtualTrees.Utils in '..\..\Source\VirtualTrees.Utils.pas',
-  VirtualEditTree in '..\..\Source\VirtualEditTree.pas';
+  VirtualTrees.Types in '..\..\Source\VirtualTrees.Types.pas',
+  VirtualTrees.Header in '..\..\Source\VirtualTrees.Header.pas',
+  VirtualTrees.DataObject in '..\..\Source\VirtualTrees.DataObject.pas',
+  VirtualTrees.DragnDrop in '..\..\Source\VirtualTrees.DragnDrop.pas',
+  VirtualTrees.DragImage in '..\..\Source\VirtualTrees.DragImage.pas',
+  VirtualTrees.EditLink in '..\..\Source\VirtualTrees.EditLink.pas',
+  VirtualTrees.Colors in '..\..\Source\VirtualTrees.Colors.pas',
+  VirtualTrees.DrawTree in '..\..\Source\VirtualTrees.DrawTree.pas',
+  VirtualTrees.AncestorVcl in '..\..\Source\VirtualTrees.AncestorVcl.pas',
+  VirtualTrees.BaseAncestorVcl in '..\..\Source\VirtualTrees.BaseAncestorVcl.pas',
+  VirtualTrees.BaseTree in '..\..\source\VirtualTrees.BaseTree.pas';
 
 end.
-
-
