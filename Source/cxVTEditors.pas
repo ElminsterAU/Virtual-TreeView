@@ -17,6 +17,7 @@ unit cxVTEditors;
 interface
 
 uses
+  VirtualTrees.Types,
   Windows,
   SysUtils,
   Classes,
