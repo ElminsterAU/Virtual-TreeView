@@ -3120,7 +3120,7 @@ begin
         BackColor := Color;
 
       if AbsoluteIndex mod 2 = 0 then begin
-        BackColor := Darker(BackColor, 0.03);
+        BackColor := ZebraStripe(BackColor);
       end;
     end;
 	{<<<}

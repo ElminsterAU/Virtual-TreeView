@@ -130,6 +130,7 @@ function IsHighContrastEnabled(): Boolean;
 {>>>}
 function Lighter(Color: TColor; Amount: Double = 0.5): TColor;
 function Darker(Color: TColor; Amount: Double = 0.5): TColor;
+function ZebraStripe(Color: TColor): TColor;
 {<<<}
 
 /// <summary>
@@ -1863,6 +1864,22 @@ begin
   RGBtoHSL(ColToRGBTriple(Color), h, s, l);
 
   l := Max(l - l * Amount, 0.0);
+
+  HSLtoRGB(h, s, l, rgb);
+  Result := RGBTripleToCol(rgb);
+end;
+
+function ZebraStripe(Color: TColor): TColor;
+var
+  h, s, l: Extended;
+  rgb:TRGBTriple;
+begin
+  RGBtoHSL(ColToRGBTriple(Color), h, s, l);
+
+  if l > 0.5 then
+    Exit(Darker(Color, 0.03));
+
+  l := Min(l + 0.04, 1.0);
 
   HSLtoRGB(h, s, l, rgb);
   Result := RGBTripleToCol(rgb);
