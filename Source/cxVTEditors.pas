@@ -143,7 +143,7 @@ end;
 function TcxComboEditLink.celGetProperties: TcxComboBoxProperties;
 begin
   if not Assigned(celProperties) then begin
-    celProperties := TcxComboBoxProperties.Create(Self);
+    celProperties := TcxComboBoxProperties.Create(nil);
     celProperties.ImmediateUpdateText := True;
     celProperties.ImmediatePost := True;
   end;
@@ -153,7 +153,7 @@ end;
 procedure TcxComboEditLink.celSetProperties(const Value: TcxComboBoxProperties);
 begin
   if not Assigned(celProperties) then
-    celProperties := TcxComboBoxProperties.Create(Self);
+    celProperties := TcxComboBoxProperties.Create(nil);
   celGetProperties.Assign(Value);
 end;
 
@@ -270,14 +270,14 @@ end;
 function TcxCheckComboEditLink.ccelGetProperties: TcxCheckComboBoxProperties;
 begin
   if not Assigned(ccelProperties) then
-    ccelProperties := TcxCheckComboBoxProperties.Create(Self);
+    ccelProperties := TcxCheckComboBoxProperties.Create(nil);
   Result := ccelProperties;
 end;
 
 procedure TcxCheckComboEditLink.ccelSetProperties(const Value: TcxCheckComboBoxProperties);
 begin
   if not Assigned(ccelProperties) then
-    ccelProperties := TcxCheckComboBoxProperties.Create(Self);
+    ccelProperties := TcxCheckComboBoxProperties.Create(nil);
   ccelProperties.Assign(ccelProperties);
 end;
 
@@ -398,14 +398,14 @@ end;
 function TcxTextEditLink.telGetProperties: TcxTextEditProperties;
 begin
   if not Assigned(telProperties) then
-    telProperties := TcxTextEditProperties.Create(Self);
+    telProperties := TcxTextEditProperties.Create(nil);
   Result := telProperties;
 end;
 
 procedure TcxTextEditLink.telSetProperties(const Value: TcxTextEditProperties);
 begin
   if not Assigned(telProperties) then
-    telProperties := TcxTextEditProperties.Create(Self);
+    telProperties := TcxTextEditProperties.Create(nil);
   telGetProperties.Assign(Value);
 end;
 

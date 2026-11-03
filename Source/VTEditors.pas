@@ -348,7 +348,7 @@ begin
   else if not FManaged then
   begin
     Result := InterlockedDecrement(FRefCount);
-    if Result <= 0 then Destroy;
+    if Result <= 0 then TThread.ForceQueue(nil, Free);
   end
   else
     Result := -1;
