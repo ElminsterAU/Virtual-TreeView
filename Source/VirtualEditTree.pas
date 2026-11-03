@@ -480,13 +480,11 @@ begin
   Result := nil;
   if Assigned(OnCreateEditor) then
     OnCreateEditor(Self, Node, Column, Result);
-  if (Result = nil) then
+  if Result = nil then
     if Column >= 0 then
       Result := TVirtualEditableColumn(Header.Columns[Column]).CreateEditor(Node)
     else
-      Result := TVTEditHeader(Header).CreateEditor(Node)
-  else
-    Result := inherited DoCreateEditor(Node, Column);
+      Result := TVTEditHeader(Header).CreateEditor(Node);
 end;
 
 procedure TCustomVirtualEditTree.DoComboDrawItem(Sender: TVirtualEditableColumn; Control: TComboBox; Index: Integer; Rect: TRect; State: TOwnerDrawState);
