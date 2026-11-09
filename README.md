@@ -14,7 +14,7 @@ I don't use C++ Builder and my experience with it is very limited. This makes it
 
 An experimental **FireMonkey** port can be found here: [livius2/Virtual-TreeView](https://github.com/livius2/Virtual-TreeView)
 
-A port to **Lazarus / FPC** can be found here: [blikblum/VirtualTreeView-Lazarus](https://github.com/blikblum/VirtualTreeView-Lazarus)
+A port to **Lazarus / FPC** can be found here: [salvadorbs/VirtualTreeView-Lazarus](https://github.com/salvadorbs/VirtualTreeView-Lazarus)
 
 An experimetal **FireMonkey** port can be found here: [livius2/Virtual-TreeView](https://github.com/livius2/Virtual-TreeView)
 
