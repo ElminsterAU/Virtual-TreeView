@@ -11902,17 +11902,9 @@ begin
     end;
     // Finalize the position cache so no nil entry remains there.
     if not (tsStopValidation in FStates) and (Integer(Index) <= High(FPositionCache)) then
-    begin
-      SetLength(FPositionCache, Index + 1);
-      with FPositionCache[Index] do
-      begin
-        Node := CurrentNode;
-        AbsoluteTop := CurrentTop;
-        {>>>}
-        AbsoluteIndex := CurrentIndex;
-        {<<<}
-      end;
-    end;
+      {>>>}
+      SetLength(FPositionCache, Index);
+      {<<<}
   end;
 
   Result := (EntryCount > 0) and not (tsStopValidation in FStates);
