@@ -9122,11 +9122,11 @@ begin
       EndUpdate();
     end;//try..finally
   end;// if M<>D
+  if (M <> D) then
+    TVTHeaderCracker(FHeader).ChangeScale(M, D); // before inherited: resizing the header moves the window and re-records the anchor rule, which inherited then scales
   inherited ChangeScale(M, D{$if CompilerVersion >= 31}, isDpiChange{$ifend});
   if (M <> D) then
   begin
-    // Scale header
-    TVTHeaderCracker(FHeader).ChangeScale(M, D);
     // Scale utility images, #796
     if FCheckImageKind = ckSystemDefault then begin
       FreeAndNil(FCheckImages);
