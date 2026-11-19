@@ -10210,19 +10210,29 @@ begin
   if not (tsEditing in FStates) then
     Exit(True);
   DoStateChange([], [tsEditing]);
-  if pCancel then
-  begin
-    Result := FEditLink.CancelEdit();
-    if Result and Assigned(FOnEditCancelled) then
-      FOnEditCancelled(Self, FEditColumn);
-  end
-  else
-  begin
-    Result := FEditLink.EndEdit;
-    if Result and Assigned(FOnEdited) then
-      FOnEdited(Self, FFocusedNode, FEditColumn);
+  {>>>}
+  try
+    if pCancel then
+    begin
+      Result := FEditLink.CancelEdit();
+      if Result and Assigned(FOnEditCancelled) then
+        FOnEditCancelled(Self, FEditColumn);
+    end
+    else
+    begin
+      try
+        Result := FEditLink.EndEdit;
+      except
+        FEditLink.CancelEdit();
+        raise;
+      end;
+      if Result and Assigned(FOnEdited) then
+        FOnEdited(Self, FFocusedNode, FEditColumn);
+    end;
+  finally
+    FEditLink := nil;
   end;
-  FEditLink := nil;
+  {<<<}
   TrySetFocus();
 end;
 
